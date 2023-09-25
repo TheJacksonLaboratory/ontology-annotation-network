@@ -1,0 +1,6 @@
+applicationType: default
+defaultPackage: org.jacksonlaboratory
+testFramework: junit
+sourceLanguage: java
+buildTool: gradle
+features: [app-name, github-workflow-ci, graalvm, gradle, http-client-test, java, java-application, junit, logback, micronaut-aot, micronaut-build, micronaut-http-validation, neo4j-bolt, netty-server, openapi, properties, readme, serialization-jackson, shade]
