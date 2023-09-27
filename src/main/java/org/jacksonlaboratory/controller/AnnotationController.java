@@ -5,11 +5,15 @@ import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jacksonlaboratory.service.AnnotationService;
 
 @Controller("${api-url.prefix}/annotation")
 public class AnnotationController {
 
-	public AnnotationController() {
+	private final AnnotationService annotationService;
+
+	public AnnotationController(AnnotationService annotationService) {
+		this.annotationService = annotationService;
 	}
 
 	@Get(uri="/{id}", produces="application/json")
@@ -28,7 +32,7 @@ public class AnnotationController {
 	}
 
 
-	@Get(uri="/{id}/loinc", produces="application/json")
+	@Get(uri="/{id}/assay", produces="application/json")
 	public HttpResponse<?> loinc(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*") @PathVariable String id) {
 		return HttpResponse.ok();
 	}
