@@ -119,7 +119,7 @@ public class HpoGraphLoader implements GraphLoader {
 				sex = "";
 			}
 			tx.run("MATCH (d:Disease {id: $diseaseId}), (p:Phenotype {id: $phenotypeId})" +
-							"CREATE (d)-[:MANIFESTS]->(p)<-[:WITH_METADATA]-(pm: PhenotypeMetadata {onset: $onset, frequency: $frequency, sex: $sex," +
+							"MERGE (d)-[:MANIFESTS]->(p)<-[:WITH_METADATA {context: $diseaseId}]-(pm: PhenotypeMetadata {onset: $onset, frequency: $frequency, sex: $sex," +
 							"sources: $sources})",
 					parameters(
 							"diseaseId", line.diseaseId().toString(),
@@ -172,7 +172,7 @@ public class HpoGraphLoader implements GraphLoader {
 	}
 
 	protected String formatSources(List<AnnotationReference> sources){
-		final String joinedSources = sources.stream().map(AnnotationReference::id).map(TermId::toString).collect(Collectors.joining());
+		final String joinedSources = sources.stream().map(AnnotationReference::id).map(TermId::toString).collect(Collectors.joining(","));
 		return  joinedSources.length() > 1 ? joinedSources : "UNKNOWN";
 	}
 

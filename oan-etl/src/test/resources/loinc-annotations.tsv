@@ -1,0 +1,8 @@
+loincName	loincId	loincScale	outcome	hpoTermId	supplementalTermId	curation	comment
+Bacteria identified in Blood by Culture	600-7	Nom	POS	HP:0000002	.	HPO:nvasilevsky[2018-05-10]	.
+Bacteria identified in Blood by Culture	600-7	Nom	NEG	HP:0000003	.	HPO:nvasilevsky[2018-05-10]	.
+Anisocytosis [Presence] in Blood by Light microscopy	702-1	Ord	NEG	HP:0000002	.	HPO:nvasilevsky[2018-04-03];JGM:azhang[2018-10-17]	.
+Anisocytosis [Presence] in Blood by Light microscopy	702-1	Ord	POS	HP:0000004	.	HPO:nvasilevsky[2018-04-03];JGM:azhang[2018-10-17]	.
+Basophils [#/volume] in Blood by Automated count	704-7	Qn	L	HP:0000002	.	HPO:probinson[2018-06-28]	.
+Basophils [#/volume] in Blood by Automated count	704-7	Qn	N	HP:0000001	.	HPO:probinson[2018-06-28]	.
+Basophils [#/volume] in Blood by Automated count	704-7	Qn	H	HP:0000004	.	HPO:probinson[2018-06-28]	.

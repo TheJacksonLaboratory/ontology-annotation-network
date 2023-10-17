@@ -1,0 +1,10 @@
+#description: "HPO annotations for rare diseases [8181: OMIM; 47: DECIPHER; 4242 ORPHANET]"
+#version: 2023-09-01
+#tracker: https://github.com/obophenotype/human-phenotype-ontology/issues
+#hpo-version: http://purl.obolibrary.org/obo/hp/releases/2023-09-01/hp.json
+database_id	disease_name	qualifier	hpo_id	reference	evidence	onset	frequency	sex	modifier	aspect	biocuration
+OMIM:619340	Developmental and epileptic encephalopathy 96		HP:0000003	PMID:31675180	PCS		1/2			P	HPO:probinson[2021-06-21]
+OMIM:619340	Developmental and epileptic encephalopathy 96		HP:0000004	PMID:31675180	PCS		1/1			P	HPO:probinson[2021-06-21]
+OMIM:609153	Pseudohyperkalemia, familial, 2, due to red cell leak		HP:0000002	PMID:2766660	IEA					P	HPO:lccarmody[2018-10-03]
+OMIM:609153	Pseudohyperkalemia, familial, 2, due to red cell leak		HP:0000003	PMID:2766660	PCS					P	HPO:lccarmody[2018-10-03]
+OMIM:609153	Pseudohyperkalemia, familial, 2, due to red cell leak		HP:0000001	PMID:2766660	PCS					P	HPO:lccarmody[2018-10-03];HPO:lccarmody[2018-10-03]
