@@ -3,7 +3,6 @@ package org.jacksonlaboratory;
 import io.micronaut.configuration.picocli.PicocliRunner;
 import jakarta.inject.Inject;
 import org.jacksonlaboratory.graph.Operations;
-import org.jacksonlaboratory.model.Module;
 import org.jacksonlaboratory.ontology.HpoGraphLoader;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;

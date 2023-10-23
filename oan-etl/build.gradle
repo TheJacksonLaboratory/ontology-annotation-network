@@ -1,6 +1,7 @@
 plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("io.micronaut.application") version "4.0.3"
+    id('jacoco')
 }
 
 group = 'org.jacksonlaboratory'
@@ -50,5 +51,17 @@ micronaut {
     processing {
         incremental(true)
         annotations("org.jacksonlaboratory.*")
+    }
+}
+
+test {
+    finalizedBy jacocoTestReport // report is always generated after tests run
+}
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
 }

@@ -1,5 +1,7 @@
 package org.jacksonlaboratory.model;
 
-public enum Module {
+public enum OntologyModule {
 	HPO, MAXO
+
 }
+

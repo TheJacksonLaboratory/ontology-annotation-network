@@ -14,7 +14,7 @@ Micronaut 4.1.2
 ### Modules
 
 #### OAN-ETL
-    A module to load our graph data which includes phenotypes, diseases, genes, assays. There
+    A ontologyModule to load our graph data which includes phenotypes, diseases, genes, assays. There
     are multiple loaders for the different ontologies that are supported
 
 Running
@@ -30,7 +30,7 @@ Testing
 ```
 
 #### OAN-REST
-    A module that exposes our graph via a REST-API. This will be used for the hpo web application
+    A ontologyModule that exposes our graph via a REST-API. This will be used for the hpo web application
     and deployed to google cloud.
 
 Running

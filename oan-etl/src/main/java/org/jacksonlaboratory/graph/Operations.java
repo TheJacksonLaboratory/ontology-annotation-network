@@ -1,13 +1,11 @@
 package org.jacksonlaboratory.graph;
 
 import jakarta.inject.Singleton;
-import org.jacksonlaboratory.model.Module;
+import org.jacksonlaboratory.model.OntologyModule;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 @Singleton
 public class Operations {
@@ -27,9 +25,9 @@ public class Operations {
 		}
 	}
 
-	public void createIndexes(Module module){
+	public void createIndexes(OntologyModule ontologyModule){
 		Transaction tx = driver.session().beginTransaction();
-		if (module.equals(Module.HPO)){
+		if (ontologyModule.equals(OntologyModule.HPO)){
 			logger.info("Creating Indexes...");
 			tx.run("CREATE INDEX phenotype_id FOR (n:Phenotype) ON (n.id)");
 			tx.run("CREATE INDEX disease_id FOR (n:Disease) ON (n.id)");
@@ -41,9 +39,9 @@ public class Operations {
 		tx.close();
 	}
 
-	public void dropIndexes(Module module){
+	public void dropIndexes(OntologyModule ontologyModule){
 		Transaction tx = driver.session().beginTransaction();
-		if(module.equals(Module.HPO)){
+		if(ontologyModule.equals(OntologyModule.HPO)){
 			logger.info("Dropping Indexes...");
 			tx.run("DROP INDEX phenotype_id IF EXISTS");
 			tx.run("DROP INDEX disease_id IF EXISTS");

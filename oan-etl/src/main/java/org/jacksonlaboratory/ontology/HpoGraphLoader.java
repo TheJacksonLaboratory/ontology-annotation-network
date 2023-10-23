@@ -2,7 +2,7 @@ package org.jacksonlaboratory.ontology;
 
 import io.micronaut.context.annotation.Context;
 import org.jacksonlaboratory.graph.Operations;
-import org.jacksonlaboratory.model.Module;
+import org.jacksonlaboratory.model.OntologyModule;
 import org.monarchinitiative.phenol.annotations.assoc.MissingPhenolResourceException;
 import org.monarchinitiative.phenol.annotations.formats.AnnotationReference;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoAssociationData;
@@ -56,12 +56,12 @@ public class HpoGraphLoader implements GraphLoader {
 		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).orphaToGenePath(orphaToGenePath).mim2GeneMedgen(omimToGenePath)
 				.hpoDiseases(diseases).hgncCompleteSetArchive(hgncPath).build();
 		List<TermId> phenotypes = diseases.stream().flatMap(d -> d.annotationLines().stream().map(HpoAnnotationLine::phenotypeTermId)).distinct().toList();
-		operations.dropIndexes(Module.HPO);
+		operations.dropIndexes(OntologyModule.HPO);
 		try (Session session = driver.session()) {
 			phenotypes(session, phenotypes, hpoOntology);
 			diseases(session, diseases);
 			genes(session, associations);
-			operations.createIndexes(Module.HPO);
+			operations.createIndexes(OntologyModule.HPO);
 			diseaseToPhenotype(session, diseases, hpoOntology);
 			diseaseToGene(session, associations);
 			assayToPhenotype(session, loincPath);
