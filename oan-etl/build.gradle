@@ -4,7 +4,7 @@ plugins {
     id('jacoco')
 }
 
-group = 'org.jacksonlaboratory'
+group = 'org.jax'
 version = '0.1'
 
 repositories {
@@ -12,6 +12,7 @@ repositories {
 }
 
 dependencies {
+    implementation project(':oan-model')
     annotationProcessor("info.picocli:picocli-codegen")
     annotationProcessor("io.micronaut.serde:micronaut-serde-processor")
     testAnnotationProcessor("io.micronaut:micronaut-inject-java")
