@@ -63,7 +63,7 @@ public class HpoGraphLoader implements GraphLoader {
 		}
 	}
 
-	protected void assayToPhenotype(Session session, Path loinc){
+	static void assayToPhenotype(Session session, Path loinc){
 		logger.info("Loading Assay Relationships...");
 		Transaction tx = session.beginTransaction();
 		try (BufferedReader reader = new BufferedReader(new FileReader(loinc.toFile()))) {
@@ -85,7 +85,7 @@ public class HpoGraphLoader implements GraphLoader {
 		}
 	}
 
-	protected void diseaseToGene(Session session, HpoAssociationData associations){
+	static void diseaseToGene(Session session, HpoAssociationData associations){
 		Transaction tx = session.beginTransaction();
 		logger.info("Loading Disease to Gene Relationships...");
 		associations.associations().diseaseIdToGeneAssociations().forEach((key, value) -> value.forEach(x ->
@@ -99,7 +99,7 @@ public class HpoGraphLoader implements GraphLoader {
 		tx.close();
 	}
 
-	protected void diseaseToPhenotype(Session session, HpoaDiseaseDataContainer diseases, Ontology ontology){
+	static void diseaseToPhenotype(Session session, HpoaDiseaseDataContainer diseases, Ontology ontology){
 		Transaction tx = session.beginTransaction();
 		logger.info("Loading Disease to Phenotype Relationships...");
 		diseases.diseaseData().stream().flatMap(d -> d.annotationLines().stream()).forEach(line -> {
@@ -128,7 +128,7 @@ public class HpoGraphLoader implements GraphLoader {
 		tx.close();
 	}
 
-	protected void phenotypes(Session session, List<TermId> termIds, Ontology ontology){
+	static void phenotypes(Session session, List<TermId> termIds, Ontology ontology){
 		Transaction tx = session.beginTransaction();
 		logger.info("Loading Phenotypes...");
 		for (TermId termId: termIds){
@@ -141,7 +141,7 @@ public class HpoGraphLoader implements GraphLoader {
 		tx.close();
 	}
 
-	protected void genes(Session session, HpoAssociationData associations){
+	static void genes(Session session, HpoAssociationData associations){
 		Transaction tx = session.beginTransaction();
 		logger.info("Loading Genes...");
 		associations.getGeneIdentifiers().forEach( g ->
@@ -153,7 +153,7 @@ public class HpoGraphLoader implements GraphLoader {
 		tx.close();
 	}
 
-	protected void diseases(Session session, HpoaDiseaseDataContainer diseases){
+	static void diseases(Session session, HpoaDiseaseDataContainer diseases){
 		Transaction tx = session.beginTransaction();
 		logger.info("Loading Diseases...");
 		diseases.diseaseData().forEach(d ->
@@ -165,12 +165,12 @@ public class HpoGraphLoader implements GraphLoader {
 		tx.close();
 	}
 
-	protected String formatSources(List<AnnotationReference> sources){
+	static String formatSources(List<AnnotationReference> sources){
 		final String joinedSources = sources.stream().map(AnnotationReference::id).map(TermId::toString).collect(Collectors.joining(","));
 		return  joinedSources.length() > 1 ? joinedSources : "UNKNOWN";
 	}
 
-	protected String formatFrequency(String frequency, Ontology ontology){
+	static String formatFrequency(String frequency, Ontology ontology){
 		if(frequency.startsWith("HP:")){
 			return ontology.getTermLabel(TermId.of(frequency)).orElse("");
 		} else if(frequency.equals("n/a") || frequency.equals("")) {
