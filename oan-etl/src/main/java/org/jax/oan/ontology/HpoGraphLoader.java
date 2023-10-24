@@ -65,8 +65,8 @@ public class HpoGraphLoader implements GraphLoader {
 
 	static void assayToPhenotype(Session session, Path loinc){
 		logger.info("Loading Assay Relationships...");
-		Transaction tx = session.beginTransaction();
-		try (BufferedReader reader = new BufferedReader(new FileReader(loinc.toFile()))) {
+		try (BufferedReader reader = new BufferedReader(new FileReader(loinc.toFile()));
+			 Transaction tx = session.beginTransaction()) {
 			String line;
 			reader.readLine();
 			while ((line = reader.readLine()) != null) {
@@ -79,90 +79,89 @@ public class HpoGraphLoader implements GraphLoader {
 			}
 			logger.info("Done.");
 			tx.commit();
-			tx.close();
 		} catch (IOException e) {
 			throw new OntologyAnnotationNetworkRuntimeException("There was a problem with the required assay file format.");
 		}
 	}
 
 	static void diseaseToGene(Session session, HpoAssociationData associations){
-		Transaction tx = session.beginTransaction();
-		logger.info("Loading Disease to Gene Relationships...");
-		associations.associations().diseaseIdToGeneAssociations().forEach((key, value) -> value.forEach(x ->
-				tx.run("MATCH (d:Disease {id: $diseaseId}), (g:Gene {id: $geneId}) " +
-								"CREATE (d)-[:EXPRESSES]->(g)",
-						parameters("diseaseId", key.toString(),
-								"geneId", x.geneIdentifier().id().toString()))
-		));
-		logger.info("Done.");
-		tx.commit();
-		tx.close();
+		try(Transaction tx = session.beginTransaction()){
+			logger.info("Loading Disease to Gene Relationships...");
+			associations.associations().diseaseIdToGeneAssociations().forEach((key, value) -> value.forEach(x ->
+					tx.run("MATCH (d:Disease {id: $diseaseId}), (g:Gene {id: $geneId}) " +
+									"CREATE (d)-[:EXPRESSES]->(g)",
+							parameters("diseaseId", key.toString(),
+									"geneId", x.geneIdentifier().id().toString()))
+			));
+			logger.info("Done.");
+			tx.commit();
+		}
 	}
 
 	static void diseaseToPhenotype(Session session, HpoaDiseaseDataContainer diseases, Ontology ontology){
-		Transaction tx = session.beginTransaction();
-		logger.info("Loading Disease to Phenotype Relationships...");
-		diseases.diseaseData().stream().flatMap(d -> d.annotationLines().stream()).forEach(line -> {
-			String onset = line.onset().map(HpoOnset::id).map(TermId::toString).orElse("");
-			String frequency = formatFrequency(line.frequency(), ontology);
-			String sources = formatSources(line.annotationReferences());
-			String sex;
-			if (line.sex() != null) {
-				sex = line.sex().toString();
-			} else {
-				sex = "";
-			}
-			tx.run("MATCH (d:Disease {id: $diseaseId}), (p:Phenotype {id: $phenotypeId})" +
-							"MERGE (d)-[:MANIFESTS]->(p)<-[:WITH_METADATA {context: $diseaseId}]-(pm: PhenotypeMetadata {onset: $onset, frequency: $frequency, sex: $sex," +
-							"sources: $sources})",
-					parameters(
-							"diseaseId", line.diseaseId().toString(),
-							"phenotypeId", line.phenotypeTermId().toString(),
-							"onset", onset, "frequency", frequency, "sex", sex,
-							"sources", sources
-					)
-			);
-		});
-		logger.info("Done.");
-		tx.commit();
-		tx.close();
+		try(Transaction tx = session.beginTransaction()) {
+			logger.info("Loading Disease to Phenotype Relationships...");
+			diseases.diseaseData().stream().flatMap(d -> d.annotationLines().stream()).forEach(line -> {
+				String onset = line.onset().map(HpoOnset::id).map(TermId::toString).orElse("");
+				String frequency = formatFrequency(line.frequency(), ontology);
+				String sources = formatSources(line.annotationReferences());
+				String sex;
+				if (line.sex() != null) {
+					sex = line.sex().toString();
+				} else {
+					sex = "";
+				}
+				tx.run("MATCH (d:Disease {id: $diseaseId}), (p:Phenotype {id: $phenotypeId})" +
+								"MERGE (d)-[:MANIFESTS]->(p)<-[:WITH_METADATA {context: $diseaseId}]-(pm: PhenotypeMetadata {onset: $onset, frequency: $frequency, sex: $sex," +
+								"sources: $sources})",
+						parameters(
+								"diseaseId", line.diseaseId().toString(),
+								"phenotypeId", line.phenotypeTermId().toString(),
+								"onset", onset, "frequency", frequency, "sex", sex,
+								"sources", sources
+						)
+				);
+			});
+			logger.info("Done.");
+			tx.commit();
+		}
 	}
 
 	static void phenotypes(Session session, List<TermId> termIds, Ontology ontology){
-		Transaction tx = session.beginTransaction();
-		logger.info("Loading Phenotypes...");
-		for (TermId termId: termIds){
-			Optional<String> label = ontology.getTermLabel(termId);
-			label.ifPresent(s -> tx.run("CREATE (p:Phenotype {id: $id, name: $name})",
-					parameters("id", termId.toString(), "name", s)));
+		try(Transaction tx = session.beginTransaction()) {
+			logger.info("Loading Phenotypes...");
+			for (TermId termId : termIds) {
+				Optional<String> label = ontology.getTermLabel(termId);
+				label.ifPresent(s -> tx.run("CREATE (p:Phenotype {id: $id, name: $name})",
+						parameters("id", termId.toString(), "name", s)));
+			}
+			logger.info("Done.");
+			tx.commit();
 		}
-		logger.info("Done.");
-		tx.commit();
-		tx.close();
 	}
 
 	static void genes(Session session, HpoAssociationData associations){
-		Transaction tx = session.beginTransaction();
-		logger.info("Loading Genes...");
-		associations.getGeneIdentifiers().forEach( g ->
-				tx.run("CREATE (g: Gene {id: $id, name: $name})",
-						parameters("id", g.id().toString(), "name", g.symbol()))
-		);
-		logger.info("Done.");
-		tx.commit();
-		tx.close();
+		try(Transaction tx = session.beginTransaction()){
+			logger.info("Loading Genes...");
+			associations.getGeneIdentifiers().forEach( g ->
+					tx.run("CREATE (g: Gene {id: $id, name: $name})",
+							parameters("id", g.id().toString(), "name", g.symbol()))
+			);
+			logger.info("Done.");
+			tx.commit();
+		}
 	}
 
 	static void diseases(Session session, HpoaDiseaseDataContainer diseases){
-		Transaction tx = session.beginTransaction();
-		logger.info("Loading Diseases...");
-		diseases.diseaseData().forEach(d ->
-				tx.run("CREATE (d:Disease {id: $id, name: $name})",
-						parameters("name", d.name(), "id", d.id().toString()))
-		);
-		logger.info("Done.");
-		tx.commit();
-		tx.close();
+		try(Transaction tx = session.beginTransaction()) {
+			logger.info("Loading Diseases...");
+			diseases.diseaseData().forEach(d ->
+					tx.run("CREATE (d:Disease {id: $id, name: $name})",
+							parameters("name", d.name(), "id", d.id().toString()))
+			);
+			logger.info("Done.");
+			tx.commit();
+		}
 	}
 
 	static String formatSources(List<AnnotationReference> sources){
