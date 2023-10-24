@@ -102,7 +102,7 @@ public class HpoGraphLoader implements GraphLoader {
 		try(Transaction tx = session.beginTransaction()) {
 			logger.info("Loading Disease to Phenotype Relationships...");
 			diseases.diseaseData().stream().flatMap(d -> d.annotationLines().stream()).forEach(line -> {
-				String onset = line.onset().map(HpoOnset::id).map(TermId::toString).orElse("");
+				String onset = line.onset().map(HpoOnset::id).map(TermId::getValue).orElse("");
 				String frequency = formatFrequency(line.frequency(), ontology);
 				String sources = formatSources(line.annotationReferences());
 				String sex;
@@ -116,7 +116,7 @@ public class HpoGraphLoader implements GraphLoader {
 								"sources: $sources})",
 						parameters(
 								"diseaseId", line.diseaseId().toString(),
-								"phenotypeId", line.phenotypeTermId().toString(),
+								"phenotypeId", line.phenotypeTermId().getValue(),
 								"onset", onset, "frequency", frequency, "sex", sex,
 								"sources", sources
 						)
@@ -133,7 +133,7 @@ public class HpoGraphLoader implements GraphLoader {
 			for (TermId termId : termIds) {
 				Optional<String> label = ontology.getTermLabel(termId);
 				label.ifPresent(s -> tx.run("CREATE (p:Phenotype {id: $id, name: $name})",
-						parameters("id", termId.toString(), "name", s)));
+						parameters("id", termId.getValue(), "name", s)));
 			}
 			logger.info("Done.");
 			tx.commit();
@@ -165,7 +165,7 @@ public class HpoGraphLoader implements GraphLoader {
 	}
 
 	static String formatSources(List<AnnotationReference> sources){
-		final String joinedSources = sources.stream().map(AnnotationReference::id).map(TermId::toString).collect(Collectors.joining(","));
+		final String joinedSources = sources.stream().map(AnnotationReference::id).map(TermId::getValue).collect(Collectors.joining(","));
 		return  joinedSources.length() > 1 ? joinedSources : "UNKNOWN";
 	}
 
