@@ -1,38 +1,46 @@
-## Micronaut 4.1.2 Documentation
+## Ontology Annotation Network
 
+*A graph to maintain our ontology annotation connections.*
+
+Java 17
+
+Micronaut 4.1.2
 - [User Guide](https://docs.micronaut.io/4.1.2/guide/index.html)
 - [API Reference](https://docs.micronaut.io/4.1.2/api/index.html)
 - [Configuration Reference](https://docs.micronaut.io/4.1.2/guide/configurationreference.html)
 - [Micronaut Guides](https://guides.micronaut.io/index.html)
 ---
 
-- [Shadow Gradle Plugin](https://plugins.gradle.org/plugin/com.github.johnrengelman.shadow)
-- [Micronaut Gradle Plugin documentation](https://micronaut-projects.github.io/micronaut-gradle-plugin/latest/)
-- [GraalVM Gradle Plugin documentation](https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html)
-## Feature serialization-jackson documentation
+### Modules
 
-- [Micronaut Serialization Jackson Core documentation](https://micronaut-projects.github.io/micronaut-serialization/latest/guide/)
+#### OAN-ETL
+    A ontologyModule to load our graph data which includes phenotypes, diseases, genes, assays. There
+    are multiple loaders for the different ontologies that are supported
 
+Running
 
-## Feature neo4j-bolt documentation
+```
+    ./gradlew oan-etl:run
+```
 
-- [Micronaut Neo4j Bolt Driver documentation](https://micronaut-projects.github.io/micronaut-neo4j/latest/guide/index.html)
+Testing
 
+```
+    ./gradlew oan-etl:test
+```
 
-## Feature openapi documentation
+#### OAN-REST
+    A ontologyModule that exposes our graph via a REST-API. This will be used for the hpo web application
+    and deployed to google cloud.
 
-- [Micronaut OpenAPI Support documentation](https://micronaut-projects.github.io/micronaut-openapi/latest/guide/index.html)
+Running
 
-- [https://www.openapis.org](https://www.openapis.org)
+```
+    ./gradlew oan-rest:run
+```
 
+Testing
 
-## Feature micronaut-aot documentation
-
-- [Micronaut AOT documentation](https://micronaut-projects.github.io/micronaut-aot/latest/guide/)
-
-
-## Feature github-workflow-ci documentation
-
-- [https://docs.github.com/en/actions](https://docs.github.com/en/actions)
-
-
+```
+    ./gradlew oan-rest:test
+```
