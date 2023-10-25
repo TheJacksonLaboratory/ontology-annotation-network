@@ -1,4 +1,4 @@
-package org.jax.oan.model;
+package org.jax.oan.core;
 
 import org.monarchinitiative.phenol.ontology.data.TermId;
 

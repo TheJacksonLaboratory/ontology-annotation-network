@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id('jacoco')
 }
 
 group = 'org.jax'
@@ -11,9 +12,23 @@ repositories {
 
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.9.1')
+    implementation("org.monarchinitiative.phenol:phenol-core:2.0.3"){
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
 test {
     useJUnitPlatform()
+}
+
+test {
+    finalizedBy jacocoTestReport // report is always generated after tests run
+}
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
+    reports {
+        xml.required = false
+        csv.required = false
+    }
 }

@@ -43,6 +43,16 @@ public class HpoGraphLoader implements GraphLoader {
 		this.driver = driver;
 		this.operations = operations;
 	}
+
+	/**
+	 * Load Neo4J Graph with hpo data. The graph has nodes: Disease, Phenotype, Gene, Assay, Medical Action and
+	 * edges Disease - Manifest - Phenotype - Metadata (with disease id) - PhenotypeMetadata,
+	 * Disease - Expresses - Gene, Assay - Measures - Phenotype,
+	 *
+	 * @param hpoDataDirectory
+	 * @throws IOException
+	 * @throws OntologyAnnotationNetworkException
+	 */
 	@Override
 	public void load(Path hpoDataDirectory) throws IOException, OntologyAnnotationNetworkException {
 		final HpoDataResolver dataResolver = HpoDataResolver.of(hpoDataDirectory);
@@ -127,7 +137,7 @@ public class HpoGraphLoader implements GraphLoader {
 		}
 	}
 
-	static void phenotypes(Session session, List<TermId> termIds, Ontology ontology){
+	void phenotypes(Session session, List<TermId> termIds, Ontology ontology){
 		try(Transaction tx = session.beginTransaction()) {
 			logger.info("Loading Phenotypes...");
 			for (TermId termId : termIds) {

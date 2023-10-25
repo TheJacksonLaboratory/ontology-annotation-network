@@ -12,15 +12,16 @@ repositories {
 }
 
 dependencies {
+    implementation project(":oan-model")
+    implementation("org.monarchinitiative.phenol:phenol-core:2.0.3"){
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
     annotationProcessor("io.micronaut:micronaut-http-validation")
     annotationProcessor("io.micronaut.openapi:micronaut-openapi")
     annotationProcessor("io.micronaut.serde:micronaut-serde-processor")
     implementation("io.micronaut.neo4j:micronaut-neo4j-bolt")
     implementation("io.micronaut.serde:micronaut-serde-jackson")
     implementation("io.swagger.core.v3:swagger-annotations")
-    implementation("org.monarchinitiative.phenol:phenol-core:2.0.3"){
-        exclude group: 'org.slf4j', module: 'slf4j-api'
-    }
     compileOnly("org.graalvm.nativeimage:svm")
     runtimeOnly("ch.qos.logback:logback-classic")
     testImplementation("io.micronaut:micronaut-http-client")
@@ -29,7 +30,7 @@ dependencies {
 
 
 application {
-    mainClass.set("org.jacksonlaboratory.Application")
+    mainClass.set("org.jax.oan.Application")
 }
 java {
     sourceCompatibility = JavaVersion.toVersion("17")
@@ -42,7 +43,7 @@ micronaut {
     testRuntime("junit5")
     processing {
         incremental(true)
-        annotations("org.jacksonlaboratory.*")
+        annotations("org.jax.oan.*")
     }
     aot {
         // Please review carefully the optimizations enabled below
