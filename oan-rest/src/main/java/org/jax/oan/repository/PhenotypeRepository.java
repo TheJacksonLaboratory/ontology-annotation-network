@@ -14,11 +14,11 @@ import java.util.List;
 import static org.neo4j.driver.Values.parameters;
 
 @Singleton
-public class AnnotationRepository {
+public class PhenotypeRepository {
 
 	private final Driver driver;
 
-	public AnnotationRepository(Driver driver) {
+	public PhenotypeRepository(Driver driver) {
 		this.driver = driver;
 	}
 
