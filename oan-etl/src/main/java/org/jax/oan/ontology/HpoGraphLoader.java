@@ -13,7 +13,9 @@ import org.monarchinitiative.phenol.annotations.io.hpo.HpoAnnotationLine;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataLoader;
 import org.monarchinitiative.phenol.io.OntologyLoader;
+import org.monarchinitiative.phenol.ontology.algo.OntologyTerms;
 import org.monarchinitiative.phenol.ontology.data.Ontology;
+import org.monarchinitiative.phenol.ontology.data.Term;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
@@ -25,6 +27,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -65,11 +68,11 @@ public class HpoGraphLoader implements GraphLoader {
 		List<TermId> phenotypes = diseases.stream().flatMap(d -> d.annotationLines().stream().map(HpoAnnotationLine::phenotypeTermId)).distinct().toList();
 		operations.dropIndexes(OntologyModule.HPO);
 		try (Session session = driver.session()) {
-			phenotypes(session, phenotypes, hpoOntology);
+			phenotypes(session, hpoOntology.getTerms());
 			diseases(session, diseases);
 			genes(session, associations);
 			operations.createIndexes(OntologyModule.HPO);
-			phenotypeToPhenotype(session, phenotypes, hpoOntology);
+			phenotypeToPhenotype(session, hpoOntology.getTerms(), hpoOntology);
 			diseaseToPhenotype(session, diseases, hpoOntology);
 			diseaseToGene(session, associations);
 			assayToPhenotype(session, dataResolver.loinc());
@@ -97,14 +100,14 @@ public class HpoGraphLoader implements GraphLoader {
 		}
 	}
 
-	static void phenotypeToPhenotype(Session session, List<TermId> phenotypes, Ontology ontology){
+	static void phenotypeToPhenotype(Session session, Collection<Term> phenotypes, Ontology ontology){
 		logger.info("Connecting Phenotypes...");
 		try(Transaction tx = session.beginTransaction()) {
-			for (TermId termId : phenotypes) {
-				List<TermId> children = ontology.graph().getChildrenStream(termId, false).toList();
+			for (Term term : phenotypes) {
+				List<TermId> children = ontology.graph().getChildrenStream(term.id(), false).toList();
 				for (TermId child : children) {
 					tx.run("MATCH (p: Phenotype {id: $source}), (c: Phenotype {id: $child}) MERGE (p)-[:HAS_CHILD]->(c)",
-							parameters("source", termId.getValue(), "child", child.getValue()));
+							parameters("source", term.id().getValue(), "child", child.getValue()));
 				}
 			}
 			tx.commit();
@@ -161,13 +164,12 @@ public class HpoGraphLoader implements GraphLoader {
 			logger.info("Done.");
 	}
 
-	void phenotypes(Session session, List<TermId> termIds, Ontology ontology){
+	void phenotypes(Session session, Collection<Term> phenotypes){
 		try(Transaction tx = session.beginTransaction()) {
 			logger.info("Loading Phenotypes...");
-			for (TermId termId : termIds) {
-				Optional<String> label = ontology.getTermLabel(termId);
-				label.ifPresent(s -> tx.run("CREATE (p:Phenotype {id: $id, name: $name})",
-						parameters("id", termId.getValue(), "name", s)));
+			for (Term term : phenotypes) {
+				tx.run("CREATE (p:Phenotype {id: $id, name: $name})",
+						parameters("id", term.id().getValue(), "name", term.getName()));
 			}
 			logger.info("Done.");
 			tx.commit();

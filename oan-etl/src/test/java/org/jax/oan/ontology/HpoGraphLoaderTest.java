@@ -50,7 +50,7 @@ class HpoGraphLoaderTest {
 						Path loincPath){
 		List<TermId> termIds = ontology.getTerms().stream().map(Term::id).toList();
 		operations.truncate();
-		graphLoader.phenotypes(session, termIds, ontology);
+		graphLoader.phenotypes(session, ontology.getTerms());
 		graphLoader.diseases(session, container);
 		graphLoader.diseaseToPhenotype(session, container, ontology);
 		graphLoader.genes(session, associations);
