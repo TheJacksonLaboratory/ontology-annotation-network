@@ -6,7 +6,10 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.serde.annotation.SerdeImport;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jax.oan.core.Annotation;
+import org.jax.oan.core.Assay;
 import org.jax.oan.core.Disease;
+import org.jax.oan.core.Gene;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
 import org.jax.oan.service.AnnotationService;
 import org.monarchinitiative.phenol.base.PhenolRuntimeException;
@@ -14,6 +17,9 @@ import org.monarchinitiative.phenol.ontology.data.TermId;
 
 @Controller("${api-prefix}/annotation")
 @SerdeImport(Disease.class)
+@SerdeImport(Gene.class)
+@SerdeImport(Annotation.class)
+@SerdeImport(Assay.class)
 public class AnnotationController {
 
 	private final AnnotationService annotationService;
@@ -26,11 +32,10 @@ public class AnnotationController {
 	public HttpResponse<?> all(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*") @PathVariable String id) {
 		try {
 			TermId termId = TermId.of(id);
-			HttpResponse.ok().body(annotationService.findAll(termId));
+			return HttpResponse.ok().body(annotationService.findAll(termId));
 		} catch(PhenolRuntimeException e){
 			throw new OntologyAnnotationNetworkRuntimeException();
 		}
-		return HttpResponse.ok();
 	}
 
 	@Get(uri="/{id}/genes", produces="application/json")
@@ -56,24 +61,12 @@ public class AnnotationController {
 
 
 	@Get(uri="/{id}/assay", produces="application/json")
-	public HttpResponse<?> loinc(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*") @PathVariable String id) {
+	public HttpResponse<?> assay(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*") @PathVariable String id) {
 		try {
 			TermId termId = TermId.of(id);
-			HttpResponse.ok().body(annotationService.findAssays(termId));
+			return HttpResponse.ok().body(annotationService.findAssays(termId));
 		} catch(PhenolRuntimeException e){
 			throw new OntologyAnnotationNetworkRuntimeException();
 		}
-		return HttpResponse.ok();
-	}
-
-	@Get(uri="/{id}/actions", produces="application/json")
-	public HttpResponse<?> actions(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*") @PathVariable String id) {
-		try {
-			TermId termId = TermId.of(id);
-			HttpResponse.ok().body(annotationService.findMedicalActions(termId));
-		} catch(PhenolRuntimeException e){
-			throw new OntologyAnnotationNetworkRuntimeException();
-		}
-		return HttpResponse.ok();
 	}
 }

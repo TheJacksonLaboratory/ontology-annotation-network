@@ -38,7 +38,4 @@ public class AnnotationService {
 		return this.annotationRepository.findAssaysByTerm(termId);
 	}
 
-	public boolean findMedicalActions(TermId termId){
-		return true;
-	}
 }
