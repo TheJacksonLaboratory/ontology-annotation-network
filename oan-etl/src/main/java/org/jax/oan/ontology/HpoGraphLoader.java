@@ -28,6 +28,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.neo4j.driver.Values.parameters;
@@ -67,6 +69,7 @@ public class HpoGraphLoader implements GraphLoader {
 			diseases(session, diseases);
 			genes(session, associations);
 			operations.createIndexes(OntologyModule.HPO);
+			phenotypeToPhenotype(session, phenotypes, hpoOntology);
 			diseaseToPhenotype(session, diseases, hpoOntology);
 			diseaseToGene(session, associations);
 			assayToPhenotype(session, dataResolver.loinc());
@@ -94,6 +97,21 @@ public class HpoGraphLoader implements GraphLoader {
 		}
 	}
 
+	static void phenotypeToPhenotype(Session session, List<TermId> phenotypes, Ontology ontology){
+		logger.info("Connecting Phenotypes...");
+		try(Transaction tx = session.beginTransaction()) {
+			for (TermId termId : phenotypes) {
+				List<TermId> children = ontology.graph().getChildrenStream(termId, false).toList();
+				for (TermId child : children) {
+					tx.run("MATCH (p: Phenotype {id: $source}), (c: Phenotype {id: $child}) MERGE (p)-[:HAS_CHILD]->(c)",
+							parameters("source", termId.getValue(), "child", child.getValue()));
+				}
+			}
+			tx.commit();
+		}
+		logger.info("Done.");
+	}
+
 	static void diseaseToGene(Session session, HpoAssociationData associations){
 		try(Transaction tx = session.beginTransaction()){
 			logger.info("Loading Disease to Gene Relationships...");
@@ -109,8 +127,9 @@ public class HpoGraphLoader implements GraphLoader {
 	}
 
 	static void diseaseToPhenotype(Session session, HpoaDiseaseDataContainer diseases, Ontology ontology){
-		try(Transaction tx = session.beginTransaction()) {
+		    AtomicReference<Transaction> tx = new AtomicReference<>(session.beginTransaction());
 			logger.info("Loading Disease to Phenotype Relationships...");
+			AtomicInteger counter = new AtomicInteger();
 			diseases.diseaseData().stream().flatMap(d -> d.annotationLines().stream()).forEach(line -> {
 				String onset = line.onset().map(HpoOnset::id).map(TermId::getValue).orElse("");
 				String frequency = formatFrequency(line.frequency(), ontology);
@@ -121,7 +140,7 @@ public class HpoGraphLoader implements GraphLoader {
 				} else {
 					sex = "";
 				}
-				tx.run("MATCH (d:Disease {id: $diseaseId}), (p:Phenotype {id: $phenotypeId})" +
+				tx.get().run("MATCH (d:Disease {id: $diseaseId}), (p:Phenotype {id: $phenotypeId})" +
 								"MERGE (d)-[:MANIFESTS]->(p)<-[:WITH_METADATA {context: $diseaseId}]-(pm: PhenotypeMetadata {onset: $onset, frequency: $frequency, sex: $sex," +
 								"sources: $sources})",
 						parameters(
@@ -131,10 +150,15 @@ public class HpoGraphLoader implements GraphLoader {
 								"sources", sources
 						)
 				);
+
+				if (counter.get() % 500 == 0){
+					tx.get().commit();
+					tx.set(session.beginTransaction());
+				}
+				counter.getAndIncrement();
 			});
+			tx.get().commit();
 			logger.info("Done.");
-			tx.commit();
-		}
 	}
 
 	void phenotypes(Session session, List<TermId> termIds, Ontology ontology){

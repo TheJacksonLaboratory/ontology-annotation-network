@@ -30,9 +30,7 @@ class HpoGraphLoaderTest {
 
 	final HpoGraphLoader graphLoader;
 
-	Ontology ontology;
-
-	Operations operations;
+	final Operations operations;
 
 	final Session session;
 
