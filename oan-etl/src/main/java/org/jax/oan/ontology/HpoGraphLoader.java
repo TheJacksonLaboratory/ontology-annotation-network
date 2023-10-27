@@ -7,6 +7,7 @@ import org.jax.oan.graph.Operations;
 import org.jax.oan.core.OntologyModule;
 import org.monarchinitiative.phenol.annotations.formats.AnnotationReference;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoAssociationData;
+import org.monarchinitiative.phenol.annotations.formats.hpo.HpoGeneAnnotation;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoOnset;
 import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoAnnotationLine;
@@ -65,7 +66,6 @@ public class HpoGraphLoader implements GraphLoader {
 		final HpoaDiseaseDataContainer diseases = HpoaDiseaseDataLoader.of(Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET)).loadDiseaseData(dataResolver.phenotypeAnnotations());
 		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).orphaToGenePath(dataResolver.orpha2Gene()).mim2GeneMedgen(dataResolver.mim2geneMedgen())
 				.hpoDiseases(diseases).hgncCompleteSetArchive(dataResolver.hgncCompleteSet()).build();
-		List<TermId> phenotypes = diseases.stream().flatMap(d -> d.annotationLines().stream().map(HpoAnnotationLine::phenotypeTermId)).distinct().toList();
 		operations.dropIndexes(OntologyModule.HPO);
 		try (Session session = driver.session()) {
 			phenotypes(session, hpoOntology.getTerms());
@@ -74,6 +74,7 @@ public class HpoGraphLoader implements GraphLoader {
 			operations.createIndexes(OntologyModule.HPO);
 			phenotypeToPhenotype(session, hpoOntology.getTerms(), hpoOntology);
 			diseaseToPhenotype(session, diseases, hpoOntology);
+			geneToPhenotype(session, associations);
 			diseaseToGene(session, associations);
 			assayToPhenotype(session, dataResolver.loinc());
 		}
@@ -90,7 +91,7 @@ public class HpoGraphLoader implements GraphLoader {
 				tx.run("MERGE (a:Assay {id: $id, name: $name, scale: $scale})",
 						parameters("id", fields[1], "name",fields[0], "scale", fields[2]));
 				tx.run("MATCH (p:Phenotype {id: $phenotypeId}), (a:Assay {id: $assayId}) " +
-								"CREATE (a)-[:MEASURES {outcome: $outcome}]->(p)",
+								"MERGE (a)-[:MEASURES {outcome: $outcome}]->(p)",
 						parameters("assayId", fields[1], "outcome", fields[3], "phenotypeId", fields[4]));
 			}
 			logger.info("Done.");
@@ -103,7 +104,7 @@ public class HpoGraphLoader implements GraphLoader {
 	static void phenotypeToPhenotype(Session session, Collection<Term> phenotypes, Ontology ontology){
 		logger.info("Connecting Phenotypes...");
 		try(Transaction tx = session.beginTransaction()) {
-			for (Term term : phenotypes) {
+			for (Term term : phenotypes.stream().distinct().toList()) {
 				List<TermId> children = ontology.graph().getChildrenStream(term.id(), false).toList();
 				for (TermId child : children) {
 					tx.run("MATCH (p: Phenotype {id: $source}), (c: Phenotype {id: $child}) MERGE (p)-[:HAS_CHILD]->(c)",
@@ -120,7 +121,7 @@ public class HpoGraphLoader implements GraphLoader {
 			logger.info("Loading Disease to Gene Relationships...");
 			associations.associations().diseaseIdToGeneAssociations().forEach((key, value) -> value.forEach(x ->
 					tx.run("MATCH (d:Disease {id: $diseaseId}), (g:Gene {id: $geneId}) " +
-									"CREATE (d)-[:EXPRESSES]->(g)",
+									"MERGE (d)-[:EXPRESSES]->(g)",
 							parameters("diseaseId", key.toString(),
 									"geneId", x.geneIdentifier().id().toString()))
 			));
@@ -164,10 +165,24 @@ public class HpoGraphLoader implements GraphLoader {
 			logger.info("Done.");
 	}
 
+	static void geneToPhenotype(Session session, HpoAssociationData associations){
+		logger.info("Loading Gene to Phenotype Relationship");
+		try(Transaction tx = session.beginTransaction()){
+			for (HpoGeneAnnotation annotation: associations.hpoToGeneAnnotations().stream().toList()){
+				final TermId ncbiGene = TermId.of(String.format("NCBIGene:%s", Integer.toString(annotation.getEntrezGeneId())));
+				tx.run("MATCH (g: Gene {id: $geneId}), (p: Phenotype {id: $phenotypeId})" +
+						" MERGE (g)-[:DETERMINES]-(p)", parameters("geneId", ncbiGene.getValue(),
+						"phenotypeId", annotation.id().getValue()));
+			}
+			tx.commit();
+		}
+		logger.info("Done");
+	}
+
 	void phenotypes(Session session, Collection<Term> phenotypes){
 		try(Transaction tx = session.beginTransaction()) {
 			logger.info("Loading Phenotypes...");
-			for (Term term : phenotypes) {
+			for (Term term : phenotypes.stream().distinct().toList()) {
 				tx.run("CREATE (p:Phenotype {id: $id, name: $name})",
 						parameters("id", term.id().getValue(), "name", term.getName()));
 			}

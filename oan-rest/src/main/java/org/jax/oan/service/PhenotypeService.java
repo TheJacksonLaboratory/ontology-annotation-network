@@ -1,7 +1,7 @@
 package org.jax.oan.service;
 
 import jakarta.inject.Singleton;
-import org.jax.oan.core.Annotation;
+import org.jax.oan.core.PhenotypeAnnotationDto;
 import org.jax.oan.core.Assay;
 import org.jax.oan.core.Disease;
 import org.jax.oan.core.Gene;
@@ -19,11 +19,11 @@ public class PhenotypeService {
 		this.phenotypeRepository = phenotypeRepository;
 	}
 
-	public Annotation findAll(TermId termId){
+	public PhenotypeAnnotationDto findAll(TermId termId){
 		List<Disease> diseases = findDiseases(termId);
 		List<Gene> genes = findGenes(termId);
 		List<Assay> assays = findAssays(termId);
-		return new Annotation(diseases, genes, assays);
+		return new PhenotypeAnnotationDto(diseases, genes, assays);
 	}
 
 	public List<Disease> findDiseases(TermId termId) {
