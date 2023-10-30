@@ -9,6 +9,8 @@ import org.monarchinitiative.phenol.annotations.formats.AnnotationReference;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoAssociationData;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoGeneAnnotation;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoOnset;
+import org.monarchinitiative.phenol.annotations.formats.hpo.category.HpoCategory;
+import org.monarchinitiative.phenol.annotations.formats.hpo.category.HpoCategoryMap;
 import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoAnnotationLine;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
@@ -28,10 +30,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -68,7 +67,8 @@ public class HpoGraphLoader implements GraphLoader {
 				.hpoDiseases(diseases).hgncCompleteSetArchive(dataResolver.hgncCompleteSet()).build();
 		operations.dropIndexes(OntologyModule.HPO);
 		try (Session session = driver.session()) {
-			phenotypes(session, hpoOntology.getTerms());
+			Map<TermId, String> categories = phenotypeToCategory(hpoOntology);
+			phenotypes(session, hpoOntology.getTerms(), categories);
 			diseases(session, diseases);
 			genes(session, associations);
 			operations.createIndexes(OntologyModule.HPO);
@@ -179,12 +179,19 @@ public class HpoGraphLoader implements GraphLoader {
 		logger.info("Done");
 	}
 
-	void phenotypes(Session session, Collection<Term> phenotypes){
+	void phenotypes(Session session, Collection<Term> phenotypes, Map<TermId, String> categories){
 		try(Transaction tx = session.beginTransaction()) {
 			logger.info("Loading Phenotypes...");
 			for (Term term : phenotypes.stream().distinct().toList()) {
-				tx.run("CREATE (p:Phenotype {id: $id, name: $name})",
-						parameters("id", term.id().getValue(), "name", term.getName()));
+				String category;
+				try {
+					category = categories.get(term.id());
+				} catch (Exception e) {
+					continue;
+				}
+				tx.run("CREATE (p:Phenotype {id: $id, name: $name, category: $category})",
+						parameters("id", term.id().getValue(),
+								"name", term.getName(), "category", category));
 			}
 			logger.info("Done.");
 			tx.commit();
@@ -213,6 +220,19 @@ public class HpoGraphLoader implements GraphLoader {
 			logger.info("Done.");
 			tx.commit();
 		}
+	}
+
+	Map<TermId, String> phenotypeToCategory(Ontology hpoOntology){
+		HpoCategoryMap hpoCatMap = new HpoCategoryMap();
+		List<TermId> allTerms = hpoOntology.getTerms().stream().map(Term::id).distinct().toList();
+		final Map<TermId, String> termToCategory = new HashMap<>();
+		hpoCatMap.addAnnotatedTerms(allTerms, hpoOntology);
+		hpoCatMap.getActiveCategoryList().forEach(category -> {
+			category.getAnnotatingTermIds().forEach(t -> {
+				termToCategory.put(t, category.getLabel());
+			});
+		});
+		return termToCategory;
 	}
 
 	static String formatSources(List<AnnotationReference> sources){

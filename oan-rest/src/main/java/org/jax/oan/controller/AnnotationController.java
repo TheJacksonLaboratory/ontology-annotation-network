@@ -14,26 +14,34 @@ import org.jax.oan.service.PhenotypeService;
 import org.monarchinitiative.phenol.base.PhenolRuntimeException;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
-@Controller("${api-prefix}/network")
+@Controller("${api-prefix}/annotation")
 @SerdeImport(Disease.class)
 @SerdeImport(Gene.class)
 @SerdeImport(Phenotype.class)
+@SerdeImport(PhenotypeMetadata.class)
 @SerdeImport(PhenotypeAnnotationDto.class)
 @SerdeImport(GeneAnnotationDto.class)
 @SerdeImport(DiseaseAnnotationDto.class)
 @SerdeImport(Assay.class)
-public class NetworkController {
+public class AnnotationController {
 
 	private final PhenotypeService phenotypeService;
 	private final GeneService geneService;
 	private final DiseaseService diseaseService;
 
-	public NetworkController(PhenotypeService phenotypeService, GeneService geneService, DiseaseService diseaseService) {
+	public AnnotationController(PhenotypeService phenotypeService, GeneService geneService, DiseaseService diseaseService) {
 		this.phenotypeService = phenotypeService;
 		this.geneService = geneService;
 		this.diseaseService = diseaseService;
 	}
 
+	/**
+	 * This is our base controller for annotations that deals with different ontology term types
+	 * and returns a defined annotation schema.
+	 * @param id the ontology identifier with prefix
+	 * @return an http response with the specific annotation schema based on the type
+	 * @throws OntologyAnnotationNetworkRuntimeException which will be a 500
+	 */
 	@Get(uri="/{id}", produces="application/json")
 	public HttpResponse<?> all(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*") @PathVariable String id) {
 		try {

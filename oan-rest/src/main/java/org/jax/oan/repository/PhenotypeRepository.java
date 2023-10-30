@@ -23,9 +23,9 @@ public class PhenotypeRepository {
 	}
 
 	/**
-	 * Give me all the diseases that manifest this phenotype.
+	 * Give me all the diseases that manifest this phenotype and its descendants.
 	 * @param termId the termId of the phenotype
-	 * @return List of disease that manifest in the disease.
+	 * @return List of diseases  or empty list
 	 */
 	public List<Disease> findDiseasesByTerm(TermId termId){
 		List<Disease> diseases = new ArrayList<>();
@@ -41,7 +41,11 @@ public class PhenotypeRepository {
 		return diseases;
 	}
 
-
+	/**
+	 * Give me all the genes that are expressed in diseases that manifest this phenotype and its descendants.
+	 * @param termId the termId of the phenotype
+	 * @return List of genes or empty list
+	 */
 	public List<Gene> findGenesByTerm(TermId termId) {
 		List<Gene> genes = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
@@ -57,6 +61,11 @@ public class PhenotypeRepository {
 		return genes;
 	}
 
+	/**
+	 * Give me all the assays that measure this phenotype.
+	 * @param termId the termId of the phenotype
+	 * @return List of assays or empty list
+	 */
 	public List<Assay> findAssaysByTerm(TermId termId){
 		List<Assay> assays = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {

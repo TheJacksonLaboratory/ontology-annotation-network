@@ -1,6 +1,7 @@
 package org.jax.oan.ontology;
 
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import org.apache.commons.collections.map.HashedMap;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.graph.Operations;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import org.neo4j.driver.types.Node;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,7 +52,7 @@ class HpoGraphLoaderTest {
 						Path loincPath){
 		List<TermId> termIds = ontology.getTerms().stream().map(Term::id).toList();
 		operations.truncate();
-		graphLoader.phenotypes(session, ontology.getTerms());
+		graphLoader.phenotypes(session, ontology.getTerms(), Map.of());
 		graphLoader.diseases(session, container);
 		graphLoader.diseaseToPhenotype(session, container, ontology);
 		graphLoader.genes(session, associations);

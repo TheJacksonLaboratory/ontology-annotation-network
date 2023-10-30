@@ -1,19 +1,20 @@
 package org.jax.oan.core;
 
 import java.util.List;
+import java.util.Map;
 
 public class DiseaseAnnotationDto {
 
-	private final List<Phenotype> phenotypes;
+	private final Map<String, List<Phenotype>> phenotypeByCategory;
 	private final List<Gene> genes;
 
-	public DiseaseAnnotationDto(List<Phenotype> phenotypes, List<Gene> genes) {
-		this.phenotypes = phenotypes;
+	public DiseaseAnnotationDto(Map<String, List<Phenotype>> phenotypeByCategory, List<Gene> genes) {
+		this.phenotypeByCategory = phenotypeByCategory;
 		this.genes = genes;
 	}
 
-	public List<Phenotype> getPhenotypes() {
-		return phenotypes;
+	public Map<String, List<Phenotype>> getPhenotypes() {
+		return phenotypeByCategory;
 	}
 
 	public List<Gene> getGenes() {
