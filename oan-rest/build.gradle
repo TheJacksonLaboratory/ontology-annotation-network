@@ -22,6 +22,7 @@ dependencies {
     implementation("io.micronaut.neo4j:micronaut-neo4j-bolt")
     implementation("io.micronaut.serde:micronaut-serde-jackson")
     implementation("io.swagger.core.v3:swagger-annotations")
+    implementation("builders.dsl:spreadsheet-builder-poi:3.0.1")
     compileOnly("org.graalvm.nativeimage:svm")
     runtimeOnly("ch.qos.logback:logback-classic")
     testImplementation("io.micronaut:micronaut-http-client")
