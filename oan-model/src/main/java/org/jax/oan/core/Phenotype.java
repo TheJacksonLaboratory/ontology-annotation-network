@@ -9,6 +9,10 @@ public class Phenotype extends OntologyClass {
 	private PhenotypeMetadata metadata;
 	private String category;
 
+	public Phenotype(TermId id, String name) {
+		super(id, name);
+	}
+
 	public Phenotype(TermId id, String name, String category) {
 		super(id, name);
 		this.category = category;
@@ -20,7 +24,10 @@ public class Phenotype extends OntologyClass {
 	}
 
 	public Optional<PhenotypeMetadata> getMetadata() {
-		return Optional.of(metadata);
+		if (metadata != null){
+			return Optional.of(metadata);
+		}
+		return Optional.empty();
 	}
 
 	public String getCategory() {

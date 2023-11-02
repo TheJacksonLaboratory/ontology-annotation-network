@@ -7,7 +7,7 @@ import java.util.List;
 
 public enum SupportedEntity {
 	PHENOTYPE("HP"),
-	DISEASE("OMIM", "MONDO", "ORPHA","DECIPHER"),
+	DISEASE("OMIM", "MONDO", "ORPHA", "DECIPHER"),
 	GENE("NCBIGENE"),
 	ASSAY("LOINC"),
 
@@ -29,5 +29,14 @@ public enum SupportedEntity {
 			}
 		}
 		return SupportedEntity.UNKNOWN;
+	}
+
+	public static boolean isSupportedDownload(SupportedEntity entity, SupportedEntity type){
+		return switch (entity) {
+			case PHENOTYPE -> (type.equals(DISEASE) || type.equals(GENE));
+			case DISEASE -> (type.equals(PHENOTYPE) || type.equals(GENE));
+			case GENE -> (type.equals(PHENOTYPE) || type.equals(DISEASE));
+			default -> false;
+		};
 	}
 }
