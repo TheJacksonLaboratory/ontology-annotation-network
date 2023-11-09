@@ -53,18 +53,15 @@ public class AnnotationController {
 	public HttpResponse<?> all(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*") @PathVariable String id) {
 		try {
 			TermId termId = TermId.of(id);
-			switch (SupportedEntity.from(termId)){
-				case PHENOTYPE:
-					return HttpResponse.ok(phenotypeService.findAll(termId));
-				case DISEASE:
-					return HttpResponse.ok(diseaseService.findAll(termId));
-				case GENE:
-					return HttpResponse.ok(geneService.findAll(termId));
-				default:
-					throw new OntologyAnnotationNetworkRuntimeException("Term Identifier not supported.");
-			}
+			return switch (SupportedEntity.from(termId)) {
+				case PHENOTYPE -> HttpResponse.ok(phenotypeService.findAll(termId));
+				case DISEASE -> HttpResponse.ok(diseaseService.findAll(termId));
+				case GENE -> HttpResponse.ok(geneService.findAll(termId));
+				default ->
+						throw new HttpStatusException(HttpStatus.BAD_REQUEST, String.format("%s is not a supported term identifier.", id));
+			};
 		} catch(PhenolRuntimeException e){
-			throw new OntologyAnnotationNetworkRuntimeException();
+			throw new HttpStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
 		}
 	}
 
@@ -89,8 +86,8 @@ public class AnnotationController {
 			} else {
 				throw new HttpStatusException(HttpStatus.BAD_REQUEST, String.format("Downloading %s associations for %s is not supported.", entity, termId.getValue()));
 			}
-		} catch(PhenolRuntimeException e){
-			throw new OntologyAnnotationNetworkRuntimeException();
+		} catch(PhenolRuntimeException | OntologyAnnotationNetworkRuntimeException e){
+			throw new HttpStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
 		}
 	}
 }

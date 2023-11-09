@@ -2,6 +2,7 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("io.micronaut.application") version "4.0.3"
     id("io.micronaut.aot") version "4.0.3"
+    id('jacoco')
 }
 
 version = "0.1"
@@ -22,11 +23,16 @@ dependencies {
     implementation("io.micronaut.neo4j:micronaut-neo4j-bolt")
     implementation("io.micronaut.serde:micronaut-serde-jackson")
     implementation("io.swagger.core.v3:swagger-annotations")
-    implementation("builders.dsl:spreadsheet-builder-poi:3.0.1")
     compileOnly("org.graalvm.nativeimage:svm")
     runtimeOnly("ch.qos.logback:logback-classic")
+
     testImplementation("io.micronaut:micronaut-http-client")
+    testImplementation("io.micronaut.test:micronaut-test-rest-assured")
     testRuntimeOnly("org.neo4j.test:neo4j-harness")
+    testImplementation('org.hamcrest:hamcrest-all:1.3')
+    testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation("io.micronaut.test:micronaut-test-junit5")
+    testImplementation("org.mockito:mockito-junit-jupiter")
 }
 
 
@@ -60,4 +66,15 @@ micronaut {
 }
 
 
+test {
+    finalizedBy jacocoTestReport // report is always generated after tests run
+}
+
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
+    reports {
+        xml.required = false
+        csv.required = false
+    }
+}
 

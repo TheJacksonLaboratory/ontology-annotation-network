@@ -20,22 +20,9 @@ public class PhenotypeService {
 	}
 
 	public PhenotypeAnnotationDto findAll(TermId termId){
-		List<Disease> diseases = findDiseases(termId);
-		List<Gene> genes = findGenes(termId);
-		List<Assay> assays = findAssays(termId);
+		List<Disease> diseases = this.phenotypeRepository.findDiseasesByTerm(termId);
+		List<Gene> genes = this.phenotypeRepository.findGenesByTerm(termId);
+		List<Assay> assays = this.phenotypeRepository.findAssaysByTerm(termId);
 		return new PhenotypeAnnotationDto(diseases, genes, assays);
 	}
-
-	public List<Disease> findDiseases(TermId termId) {
-		return this.phenotypeRepository.findDiseasesByTerm(termId);
-	}
-
-	public List<Gene> findGenes(TermId termId) {
-		return this.phenotypeRepository.findGenesByTerm(termId);
-	}
-
-	public List<Assay> findAssays(TermId termId) {
-		return this.phenotypeRepository.findAssaysByTerm(termId);
-	}
-
 }

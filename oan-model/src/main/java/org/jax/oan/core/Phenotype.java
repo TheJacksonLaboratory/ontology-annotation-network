@@ -7,7 +7,7 @@ import java.util.Optional;
 public class Phenotype extends OntologyClass {
 
 	private PhenotypeMetadata metadata;
-	private String category;
+	private String category = "";
 
 	public Phenotype(TermId id, String name) {
 		super(id, name);

@@ -1,6 +1,7 @@
 package org.jax.oan.service;
 
 import jakarta.inject.Singleton;
+import jakarta.validation.constraints.NotNull;
 import org.jax.oan.core.DiseaseAnnotationDto;
 import org.jax.oan.core.Gene;
 import org.jax.oan.core.Phenotype;

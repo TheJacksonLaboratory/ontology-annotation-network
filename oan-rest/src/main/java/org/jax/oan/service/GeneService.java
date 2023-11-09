@@ -19,16 +19,8 @@ public class GeneService {
 	}
 
 	public GeneAnnotationDto findAll(TermId termId){
-		List<Disease> diseases = findDiseasesByGene(termId);
-		List<Phenotype> phenotypes = findPhenotypesByGene(termId);
+		List<Disease> diseases = this.geneRepository.findDiseasesByGene(termId);
+		List<Phenotype> phenotypes = this.geneRepository.findPhenotypesByGene(termId);
 		return new GeneAnnotationDto(diseases, phenotypes);
-	}
-
-	public List<Phenotype> findPhenotypesByGene(TermId termId) {
-		return this.geneRepository.findPhenotypesByGene(termId);
-	}
-
-	public List<Disease> findDiseasesByGene(TermId termId){
-		return this.geneRepository.findDiseasesByGene(termId);
 	}
 }
