@@ -12,8 +12,10 @@ class AssayTest {
 		TermId id = TermId.of("LOINC:1000-1");
 		String name = "Glucose Test";
 		OntologyClass ontologyClass = new Assay(id, name);
+		OntologyClass ontologyClassOther= new Assay(id, name);
 		assertEquals(ontologyClass.getId(), id.getValue());
 		assertEquals(ontologyClass.getName(), name);
+		assertEquals(ontologyClass, ontologyClassOther);
 	}
 
 }

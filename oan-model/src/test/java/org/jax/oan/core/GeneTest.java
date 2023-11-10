@@ -12,7 +12,9 @@ class GeneTest {
 		TermId id = TermId.of("NCBIGene:0000001");
 		String name = "MYM";
 		OntologyClass ontologyClass = new Gene(id, name);
+		OntologyClass ontologyClassOther = new Gene(id, name);
 		assertEquals(ontologyClass.getId(), id.getValue());
 		assertEquals(ontologyClass.getName(), name);
+		assertEquals(ontologyClass, ontologyClassOther);
 	}
 }

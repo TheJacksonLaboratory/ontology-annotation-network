@@ -17,10 +17,12 @@ class PhenotypeMetadataTest {
 		String frequency = "1/1";
 		List<String> sources = List.of("OMIM:0199323", "PMID:0193323");
 		PhenotypeMetadata pm = new PhenotypeMetadata(sex, onset, frequency, sources);
+		PhenotypeMetadata pmOther = new PhenotypeMetadata(sex, onset, frequency, sources);
 		assertEquals(pm.getSex(), sex);
 		assertEquals(pm.getOnset(), onset);
 		assertEquals(pm.getFrequency(), frequency);
 		assertEquals(pm.getSources(), sources);
+		assertEquals(pm, pmOther);
 	}
 
 }

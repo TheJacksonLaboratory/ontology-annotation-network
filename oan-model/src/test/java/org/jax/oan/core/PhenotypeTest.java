@@ -15,9 +15,11 @@ class PhenotypeTest {
 		String name = "Abnormality";
 		String category = "Inheritance";
 		Phenotype phenotype = new Phenotype(id, name, category);
+		Phenotype phenotypeOther = new Phenotype(id, name, category);
 		assertEquals(phenotype.getId(), id.getValue());
 		assertEquals(phenotype.getName(), name);
 		assertEquals(phenotype.getCategory(), category);
 		assertEquals(phenotype.getMetadata(), Optional.empty());
+		assertEquals(phenotype, phenotypeOther);
 	}
 }
