@@ -72,8 +72,8 @@ public class PhenotypeRepository {
 			Result result = tx.run("MATCH (a: Assay)-[:MEASURES]-(p: Phenotype {id: $id}) RETURN a", parameters("id", termId.getValue()));
 
 			while (result.hasNext()) {
-				Record record = result.next();
-				Assay assay = new Assay(TermId.of(record.get("id").asString()), record.get("name").asString());
+				Value value = result.next().get("a");
+				Assay assay = new Assay(TermId.of(value.get("id").asString()), value.get("name").asString());
 				assays.add(assay);
 			}
 		}

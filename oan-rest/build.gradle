@@ -33,6 +33,11 @@ dependencies {
     testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation("io.micronaut.test:micronaut-test-junit5")
     testImplementation("org.mockito:mockito-junit-jupiter")
+    testRuntimeOnly('javax.ws.rs:javax.ws.rs-api:2.1.1')
+    testRuntimeOnly("javax.validation:validation-api:2.0.1.Final")
+    testRuntimeOnly("javax.annotation:javax.annotation-api:1.3.2")
+    testRuntimeOnly("org.neo4j.test:neo4j-harness")
+
 }
 
 

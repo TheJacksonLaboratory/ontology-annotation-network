@@ -12,7 +12,10 @@ import org.neo4j.driver.Transaction;
 import org.neo4j.driver.Value;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static org.neo4j.driver.Values.parameters;
 
@@ -56,7 +59,7 @@ public class DiseaseRepository {
 				Record r = result.next();
 				Value p = r.get("p");
 				Value pm = r.get("pm");
-				PhenotypeMetadata phenotypeMetadata = new PhenotypeMetadata(pm.get("sex").asString(), pm.get("onset").asString(), pm.get("frequency").asString(), List.of(pm.get("sources").asString().split(";")));
+				PhenotypeMetadata phenotypeMetadata = new PhenotypeMetadata(pm.get("sex").asString(), pm.get("onset").asString(), pm.get("frequency").asString(), Arrays.stream(pm.get("sources").asString().split(";")).filter(Predicate.not(String::isBlank)).collect(Collectors.toList()));
 				Phenotype phenotype = new Phenotype(TermId.of(p.get("id").asString()), p.get("name").asString(), p.get("category").asString(), phenotypeMetadata);
 				phenotypes.add(phenotype);
 			}

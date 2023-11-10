@@ -52,10 +52,13 @@ public class DownloadService {
 			case PHENOTYPE -> {
 				if(target.equals(SupportedEntity.DISEASE)){
 					List<Disease> diseases = this.phenotypeRepository.findDiseasesByTerm(termId);
-					return buildFile(String.format("dieases_for_%s", termId.getValue()), diseases);
-				} else {
+					return buildFile(String.format("diseases_for_%s", termId.getValue()), diseases);
+				} else if(target.equals(SupportedEntity.GENE)) {
 					List<Gene> genes = this.phenotypeRepository.findGenesByTerm(termId);
 					return buildFile(String.format("genes_for_%s", termId.getValue()), genes);
+				} else {
+					List<Assay> assays = this.phenotypeRepository.findAssaysByTerm(termId);
+					return buildFile(String.format("assays_for_%s", termId.getValue()), assays);
 				}
 			}
 			default -> throw new OntologyAnnotationNetworkRuntimeException(String.format("Downloading %s association for %s failed because source type is not supported.", target.toString().toLowerCase(), termId.getValue()));

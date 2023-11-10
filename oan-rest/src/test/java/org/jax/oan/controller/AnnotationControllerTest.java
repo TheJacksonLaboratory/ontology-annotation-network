@@ -19,9 +19,11 @@ import static org.hamcrest.CoreMatchers.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
+import static org.jax.oan.TestData.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -85,10 +87,12 @@ class AnnotationControllerTest {
 
 	@Test
 	void positive_download_file(RequestSpecification spec) throws IOException {
+		SystemFile file = buildSimpleSpreadSheet();
 		when(downloadService.associations(TermId.of("OMIM:0392932"), SupportedEntity.DISEASE, SupportedEntity.GENE))
-				.thenReturn(buildSimpleSpreadSheet());
+				.thenReturn(file);
 		spec.when().get("/api/annotation/OMIM:0392932/download/gene").then()
 				.statusCode(200).contentType("text/tab-separated-values");
+		Files.deleteIfExists(file.getFile().toPath());
 	}
 
 	@Test
@@ -104,33 +108,6 @@ class AnnotationControllerTest {
 	@Test
 	void negative_download_file_bad_type(RequestSpecification spec){
 		spec.when().get("/api/annotation/OMIM:0392932/download/disease").then().statusCode(400);
-	}
-
-	private static List<Gene> genes(){
-		return List.of(
-				new Gene(TermId.of("NCBIGene:00093"),"TP4"),
-				new Gene(TermId.of("NCBIGene:02002"),"YZ")
-		);
-	}
-
-	private static List<Disease> diseases(){
-		return List.of(
-				new Disease(TermId.of("MONDO:099233"),"Really bad one"),
-				new Disease(TermId.of("DECIPHER:434444"),"Kinda bad one")
-		);
-	}
-
-	private static List<Phenotype> phenotypes(){
-		return List.of(
-				new Phenotype(TermId.of("HP:099233"),"Long legs"),
-				new Phenotype(TermId.of("HP:434444"),"Big bicep small arm")
-		);
-	}
-
-	private static List<Assay> assays(){
-		return List.of(
-				new Assay(TermId.of("LOINC:55555"),"Special bicep test")
-		);
 	}
 
 	private static SystemFile buildSimpleSpreadSheet() throws IOException {

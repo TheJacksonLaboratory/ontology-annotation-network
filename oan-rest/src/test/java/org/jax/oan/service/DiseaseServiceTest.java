@@ -59,9 +59,6 @@ class DiseaseServiceTest {
 		);
 	}
 
-
-
-
 	@MockBean(DiseaseRepository.class)
 	DiseaseRepository diseaseRepository() {
 		return mock(DiseaseRepository.class);

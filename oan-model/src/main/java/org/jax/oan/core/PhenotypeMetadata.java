@@ -1,6 +1,7 @@
 package org.jax.oan.core;
 
 import java.util.List;
+import java.util.Objects;
 
 public class PhenotypeMetadata {
 
@@ -30,5 +31,18 @@ public class PhenotypeMetadata {
 
 	public List<String> getSources() {
 		return sources;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		PhenotypeMetadata that = (PhenotypeMetadata) o;
+		return Objects.equals(sex, that.sex) && Objects.equals(onset, that.onset) && Objects.equals(frequency, that.frequency) && Objects.equals(sources, that.sources);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(sex, onset, frequency, sources);
 	}
 }

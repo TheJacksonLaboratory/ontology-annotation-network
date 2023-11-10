@@ -28,7 +28,7 @@ public class GraphCommand implements Runnable {
 	@Option(names = {"-m", "--modules"}, description = "The list of modules to load into the graph.")
 	List<String> modules;
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 		PicocliRunner.run(GraphCommand.class, args);
 	}
 
