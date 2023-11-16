@@ -25,10 +25,7 @@ public class Phenotype extends OntologyClass {
 	}
 
 	public Optional<PhenotypeMetadata> getMetadata() {
-		if (metadata != null){
-			return Optional.of(metadata);
-		}
-		return Optional.empty();
+		return Optional.ofNullable(metadata);
 	}
 
 	public String getCategory() {

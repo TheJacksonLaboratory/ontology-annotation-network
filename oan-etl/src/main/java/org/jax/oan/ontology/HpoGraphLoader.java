@@ -1,6 +1,7 @@
 package org.jax.oan.ontology;
 
 import io.micronaut.context.annotation.Context;
+import org.jax.oan.exception.OntologyAnnotationNetworkDataException;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
 import org.jax.oan.graph.Operations;
@@ -56,10 +57,10 @@ public class HpoGraphLoader implements GraphLoader {
 	 * @throws OntologyAnnotationNetworkException
 	 */
 	@Override
-	public void load(Path hpoDataDirectory) throws IOException, OntologyAnnotationNetworkException {
+	public void load(Path hpoDataDirectory, Set<DiseaseDatabase> databases) throws IOException, OntologyAnnotationNetworkException {
 		final HpoDataResolver dataResolver = HpoDataResolver.of(hpoDataDirectory);
 		final Ontology hpoOntology = OntologyLoader.loadOntology(dataResolver.hpJson().toFile());
-		final HpoaDiseaseDataContainer diseases = HpoaDiseaseDataLoader.of(Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET)).loadDiseaseData(dataResolver.phenotypeAnnotations());
+		final HpoaDiseaseDataContainer diseases = HpoaDiseaseDataLoader.of(databases).loadDiseaseData(dataResolver.phenotypeAnnotations());
 		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).orphaToGenePath(dataResolver.orpha2Gene()).mim2GeneMedgen(dataResolver.mim2geneMedgen())
 				.hpoDiseases(diseases).hgncCompleteSetArchive(dataResolver.hgncCompleteSet()).build();
 		operations.dropIndexes(OntologyModule.HPO);
@@ -94,7 +95,7 @@ public class HpoGraphLoader implements GraphLoader {
 			logger.info("Done.");
 			tx.commit();
 		} catch (IOException e) {
-			throw new OntologyAnnotationNetworkRuntimeException("There was a problem with the required assay file format.");
+			throw new OntologyAnnotationNetworkRuntimeException("There was a problem with the required assay file format.", e);
 		}
 	}
 
@@ -102,8 +103,7 @@ public class HpoGraphLoader implements GraphLoader {
 		logger.info("Connecting Phenotypes...");
 		try(Transaction tx = session.beginTransaction()) {
 			for (Term term : phenotypes.stream().distinct().toList()) {
-				List<TermId> children = ontology.graph().getChildrenStream(term.id(), false).toList();
-				for (TermId child : children) {
+				for (TermId child : ontology.graph().getChildren(term.id(), false)) {
 					tx.run("MATCH (p: Phenotype {id: $source}), (c: Phenotype {id: $child}) MERGE (p)-[:HAS_CHILD]->(c)",
 							parameters("source", term.id().getValue(), "child", child.getValue()));
 				}
@@ -159,14 +159,15 @@ public class HpoGraphLoader implements GraphLoader {
 				counter.getAndIncrement();
 			});
 			tx.get().commit();
+			tx.get().close();
 			logger.info("Done.");
 	}
 
 	static void geneToPhenotype(Session session, HpoAssociationData associations){
 		logger.info("Loading Gene to Phenotype Relationship");
 		try(Transaction tx = session.beginTransaction()){
-			for (HpoGeneAnnotation annotation: associations.hpoToGeneAnnotations().stream().toList()){
-				final TermId ncbiGene = TermId.of(String.format("NCBIGene:%s", Integer.toString(annotation.getEntrezGeneId())));
+			for (HpoGeneAnnotation annotation: associations.hpoToGeneAnnotations()){
+				final TermId ncbiGene = TermId.of(String.format("NCBIGene:%s", annotation.getEntrezGeneId()));
 				tx.run("MATCH (g: Gene {id: $geneId}), (p: Phenotype {id: $phenotypeId})" +
 						" MERGE (g)-[:DETERMINES]-(p)", parameters("geneId", ncbiGene.getValue(),
 						"phenotypeId", annotation.id().getValue()));
@@ -176,7 +177,7 @@ public class HpoGraphLoader implements GraphLoader {
 		logger.info("Done");
 	}
 
-	void phenotypes(Session session, Collection<Term> phenotypes, Map<TermId, String> categories){
+	void phenotypes(Session session, Collection<Term> phenotypes, Map<TermId, String> categories) throws OntologyAnnotationNetworkDataException {
 		try(Transaction tx = session.beginTransaction()) {
 			logger.info("Loading Phenotypes...");
 			for (Term term : phenotypes.stream().distinct().toList()) {
@@ -184,7 +185,8 @@ public class HpoGraphLoader implements GraphLoader {
 				try {
 					category = categories.get(term.id());
 				} catch (Exception e) {
-					continue;
+					throw new OntologyAnnotationNetworkDataException(
+							String.format("TermId %s could not get a category.", term.id().getValue()));
 				}
 				tx.run("CREATE (p:Phenotype {id: $id, name: $name, category: $category})",
 						parameters("id", term.id().getValue(),
