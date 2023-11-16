@@ -4,34 +4,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class PhenotypeMetadata {
-
-	private final String sex;
-	private final String onset;
-	private final String frequency;
-	private final List<String> sources;
+public record PhenotypeMetadata(String sex, String onset, String frequency, List<String> sources) {
 
 	public PhenotypeMetadata(String sex, String onset, String frequency, List<String> sources) {
 		this.sex = sex == null ? "" : sex;
 		this.onset = onset == null ? "" : onset;
-		this.frequency =  frequency == null ? "" : frequency;
+		this.frequency = frequency == null ? "" : frequency;
 		this.sources = sources == null ? Collections.emptyList() : sources;
-	}
-
-	public String getSex() {
-		return sex;
-	}
-
-	public String getOnset() {
-		return onset;
-	}
-
-	public String getFrequency() {
-		return frequency;
-	}
-
-	public List<String> getSources() {
-		return sources;
 	}
 
 	@Override

@@ -5,6 +5,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -14,7 +15,7 @@ class PhenotypeAnnotationDtoTest {
 
 	@ParameterizedTest
 	@MethodSource
-	void create(List<Disease> diseases, List<Gene> genes, List<Assay> assays){
+	void create(Collection<Disease> diseases, Collection<Gene> genes, Collection<Assay> assays){
 		PhenotypeAnnotationDto dto = new PhenotypeAnnotationDto(diseases, genes, assays);
 		assertEquals(dto.diseases(), diseases);
 		assertEquals(dto.genes(), genes);

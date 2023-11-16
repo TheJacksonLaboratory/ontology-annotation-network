@@ -5,19 +5,11 @@ import org.monarchinitiative.phenol.ontology.data.TermId;
 import java.util.Objects;
 import java.util.Optional;
 
-public class Phenotype extends OntologyClass {
+public class Phenotype extends BaseOntologyClass {
 
 	private PhenotypeMetadata metadata;
-	private String category = "";
+	private final String category;
 
-	public Phenotype(TermId id, String name) {
-		super(id, name);
-	}
-
-	public Phenotype(TermId id, String name, String category) {
-		super(id, name);
-		this.category = category;
-	}
 	public Phenotype(TermId id, String name, String category, PhenotypeMetadata metadata) {
 		super(id, name);
 		this.metadata = metadata;
@@ -28,8 +20,8 @@ public class Phenotype extends OntologyClass {
 		return Optional.ofNullable(metadata);
 	}
 
-	public String getCategory() {
-		return category;
+	public Optional<String> getCategory() {
+		return Optional.ofNullable(category);
 	}
 
 

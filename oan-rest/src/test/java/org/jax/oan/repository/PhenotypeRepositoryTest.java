@@ -12,6 +12,7 @@ import org.monarchinitiative.phenol.ontology.data.TermId;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Transaction;
 
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,8 +52,8 @@ class PhenotypeRepositoryTest {
 
 	@Test
 	void findDiseasesByTerm() {
-		List<Disease> diseases = this.phenotypeRepository.findDiseasesByTerm(TermId.of("HP:000001"));
-		List<Disease> expected = List.of(
+		Collection<Disease> diseases = this.phenotypeRepository.findDiseasesByTerm(TermId.of("HP:000001"));
+		Collection<Disease> expected = List.of(
 				new Disease(TermId.of("OMIM:092320"), "Some bad disease")
 		);
 		assertTrue(diseases.containsAll(expected));
@@ -60,8 +61,8 @@ class PhenotypeRepositoryTest {
 
 	@Test
 	void findGenesByTerm() {
-		List<Gene> genes = this.phenotypeRepository.findGenesByTerm(TermId.of("HP:000001"));
-		List<Gene> expected = List.of(
+		Collection<Gene> genes = this.phenotypeRepository.findGenesByTerm(TermId.of("HP:000001"));
+		Collection<Gene> expected = List.of(
 				new Gene(TermId.of("NCBIGene:9999"),"TX2"),
 				new Gene(TermId.of("NCBIGene:7777"),"MNN")
 
@@ -73,8 +74,8 @@ class PhenotypeRepositoryTest {
 
 	@Test
 	void findAssaysByTerm() {
-		List<Assay> assays = this.phenotypeRepository.findAssaysByTerm(TermId.of("HP:000001"));
-		List<Assay> expected = List.of(
+		Collection<Assay> assays = this.phenotypeRepository.findAssaysByTerm(TermId.of("HP:000001"));
+		Collection<Assay> expected = List.of(
 				new Assay(TermId.of("LOINC:03923"), "Glucose in blood")
 		);
 		assertTrue(expected.containsAll(assays));

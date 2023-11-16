@@ -8,7 +8,9 @@ import org.jax.oan.core.Phenotype;
 import org.jax.oan.repository.DiseaseRepository;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -21,10 +23,12 @@ public class DiseaseService {
 	}
 
 	public DiseaseAnnotationDto findAll(TermId termId){
-		List<Phenotype> phenotypes = this.diseaseRepository.findPhenotypesByDisease(termId);
-		List<Gene> genes = this.diseaseRepository.findGenesByDisease(termId);
+		Collection<Phenotype> phenotypes = this.diseaseRepository.findPhenotypesByDisease(termId);
+		Collection<Gene> genes = this.diseaseRepository.findGenesByDisease(termId);
 		return new DiseaseAnnotationDto(
-				phenotypes.stream().collect(Collectors.groupingBy(Phenotype::getCategory)),
+				phenotypes.stream().filter(p -> p.getCategory().isEmpty()).collect(Collectors.groupingBy(
+						p -> p.getCategory().orElse("UNKNOWN")
+				)),
 				genes);
 	}
 }

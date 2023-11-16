@@ -14,6 +14,7 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Transaction;
 
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -48,7 +49,7 @@ class DiseaseRepositoryTest {
 
 	@Test
 	void findGenesByDisease() {
-		List<Gene> genes = diseaseRepository.findGenesByDisease(TermId.of("OMIM:092320"));
+		Collection<Gene> genes = diseaseRepository.findGenesByDisease(TermId.of("OMIM:092320"));
 		List<Gene> expected = List.of(
 				new Gene(TermId.of("NCBIGene:9999"),"TX2"),
 				new Gene(TermId.of("NCBIGene:7777"),"MNN")
@@ -60,7 +61,7 @@ class DiseaseRepositoryTest {
 
 	@Test
 	void findPhenotypesByDisease() {
-		List<Phenotype> phenotypes = diseaseRepository.findPhenotypesByDisease(TermId.of("OMIM:092320"));
+		Collection<Phenotype> phenotypes = diseaseRepository.findPhenotypesByDisease(TermId.of("OMIM:092320"));
 		List<Phenotype> expected = List.of(
 				new Phenotype(TermId.of("HP:000001"), "short stature", "", new PhenotypeMetadata("female", "", "1/1", List.of()))
 		);

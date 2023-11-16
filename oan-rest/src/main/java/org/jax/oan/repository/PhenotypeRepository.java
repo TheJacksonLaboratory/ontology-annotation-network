@@ -6,9 +6,9 @@ import org.jax.oan.core.Disease;
 import org.jax.oan.core.Gene;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 import org.neo4j.driver.*;
-import org.neo4j.driver.Record;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static org.neo4j.driver.Values.parameters;
@@ -27,7 +27,7 @@ public class PhenotypeRepository {
 	 * @param termId the termId of the phenotype
 	 * @return List of diseases  or empty list
 	 */
-	public List<Disease> findDiseasesByTerm(TermId termId){
+	public Collection<Disease> findDiseasesByTerm(TermId termId){
 		List<Disease> diseases = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
 			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} with nodes MATCH (d: Disease)-[:MANIFESTS]->(p: Phenotype)\n" +
@@ -46,7 +46,7 @@ public class PhenotypeRepository {
 	 * @param termId the termId of the phenotype
 	 * @return List of genes or empty list
 	 */
-	public List<Gene> findGenesByTerm(TermId termId) {
+	public Collection<Gene> findGenesByTerm(TermId termId) {
 		List<Gene> genes = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
 			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} call { with nodes MATCH (d: Disease)-[:MANIFESTS]->(p: Phenotype)" +
@@ -66,8 +66,8 @@ public class PhenotypeRepository {
 	 * @param termId the termId of the phenotype
 	 * @return List of assays or empty list
 	 */
-	public List<Assay> findAssaysByTerm(TermId termId){
-		List<Assay> assays = new ArrayList<>();
+	public Collection<Assay> findAssaysByTerm(TermId termId){
+		Collection<Assay> assays = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
 			Result result = tx.run("MATCH (a: Assay)-[:MEASURES]-(p: Phenotype {id: $id}) RETURN a", parameters("id", termId.getValue()));
 

@@ -23,7 +23,7 @@ class GeneAnnotationDtoTest {
 	private static Stream<Arguments> create() {
 		return Stream.of(
 				Arguments.of(List.of(new Disease(TermId.of("OMIM:099232"), "Bad Disease")),
-						List.of(new Phenotype(TermId.of("HP:02932"), "abnormal hands"), new Phenotype(TermId.of("HP:099999"), "abnormal eyes"))
+						List.of(new Phenotype(TermId.of("HP:02932"), "abnormal hands", null, null), new Phenotype(TermId.of("HP:099999"), "abnormal eyes", null, null))
 				)
 		);
 	}

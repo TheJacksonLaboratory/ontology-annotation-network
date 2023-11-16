@@ -1,5 +1,5 @@
 package org.jax.oan.core;
 
-import java.util.List;
+import java.util.Collection;
 
-public record PhenotypeAnnotationDto(List<Disease> diseases, List<Gene> genes, List<Assay> assays) { }
+public record PhenotypeAnnotationDto(Collection<Disease> diseases, Collection<Gene> genes, Collection<Assay> assays) { }

@@ -24,7 +24,7 @@ class DiseaseAnnotationDtoTest {
 
 	private static Stream<Arguments> create() {
 		return Stream.of(
-				Arguments.of(Map.of("inheritance", List.of(new Phenotype(TermId.of("HP:099232"), "Abnormality", "inheritance"))),
+				Arguments.of(Map.of("inheritance", List.of(new Phenotype(TermId.of("HP:099232"), "Abnormality", "inheritance", null))),
 						List.of(new Gene(TermId.of("NCBIGene:02932"), "TX4"), new Gene(TermId.of("NCBIGene:44444"), "GN1")))
 		);
 	}
