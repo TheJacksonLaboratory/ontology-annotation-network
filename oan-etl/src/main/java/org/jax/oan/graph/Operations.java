@@ -33,7 +33,7 @@ public class Operations {
 			tx.run("CREATE INDEX disease_id FOR (n:Disease) ON (n.id)");
 			tx.run("CREATE INDEX gene_id FOR (n:Gene) ON (n.id)");
 			tx.run("CREATE INDEX assay_id FOR (n:Assay) ON (n.id)");
-			logger.info("Done...");
+			logger.info("Done.");
 		}
 		tx.commit();
 		tx.close();
@@ -47,7 +47,7 @@ public class Operations {
 			tx.run("DROP INDEX disease_id IF EXISTS");
 			tx.run("DROP INDEX gene_id IF EXISTS");
 			tx.run("DROP INDEX assay_id IF EXISTS");
-			logger.info("Done...");
+			logger.info("Done.");
 		}
 		tx.commit();
 		tx.close();

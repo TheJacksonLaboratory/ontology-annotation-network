@@ -1,6 +1,7 @@
 package org.jax.oan.ontology;
 
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import org.jax.oan.exception.OntologyAnnotationNetworkDataException;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.graph.Operations;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,6 @@ import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataLoader;
 import org.monarchinitiative.phenol.io.OntologyLoader;
 import org.monarchinitiative.phenol.ontology.data.Ontology;
-import org.monarchinitiative.phenol.ontology.data.Term;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
@@ -21,6 +21,7 @@ import org.neo4j.driver.types.Node;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,9 +31,7 @@ class HpoGraphLoaderTest {
 
 	final HpoGraphLoader graphLoader;
 
-	Ontology ontology;
-
-	Operations operations;
+	final Operations operations;
 
 	final Session session;
 
@@ -49,10 +48,9 @@ class HpoGraphLoaderTest {
 	}
 
 	void configureGraph(HpoAssociationData associations, HpoaDiseaseDataContainer container, Ontology ontology,
-						Path loincPath){
-		List<TermId> termIds = ontology.getTerms().stream().map(Term::id).toList();
+						Path loincPath) throws OntologyAnnotationNetworkDataException {
 		operations.truncate();
-		graphLoader.phenotypes(session, termIds, ontology);
+		graphLoader.phenotypes(session, ontology.getTerms(), Map.of());
 		graphLoader.diseases(session, container);
 		graphLoader.diseaseToPhenotype(session, container, ontology);
 		graphLoader.genes(session, associations);
