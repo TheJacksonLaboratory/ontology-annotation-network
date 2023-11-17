@@ -1,6 +1,0 @@
-
-rootProject.name="ontology-annotation-network"
-include 'oan-rest'
-include 'oan-etl'
-include 'oan-model'
-
