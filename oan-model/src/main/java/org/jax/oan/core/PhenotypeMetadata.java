@@ -1,36 +1,16 @@
 package org.jax.oan.core;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class PhenotypeMetadata {
-
-	private String sex;
-	private String onset;
-	private String frequency;
-	private List<String> sources;
+public record PhenotypeMetadata(String sex, String onset, String frequency, List<String> sources) {
 
 	public PhenotypeMetadata(String sex, String onset, String frequency, List<String> sources) {
-		this.sex = sex;
-		this.onset = onset;
-		this.frequency = frequency;
-		this.sources = sources;
-	}
-
-	public String getSex() {
-		return sex;
-	}
-
-	public String getOnset() {
-		return onset;
-	}
-
-	public String getFrequency() {
-		return frequency;
-	}
-
-	public List<String> getSources() {
-		return sources;
+		this.sex = sex == null ? "" : sex;
+		this.onset = onset == null ? "" : onset;
+		this.frequency = frequency == null ? "" : frequency;
+		this.sources = sources == null ? Collections.emptyList() : sources;
 	}
 
 	@Override

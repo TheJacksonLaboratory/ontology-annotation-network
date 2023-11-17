@@ -13,6 +13,7 @@ import org.neo4j.driver.Value;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -33,8 +34,8 @@ public class DiseaseRepository {
 	 * @param termId the termId of the disease
 	 * @return List of genes or empty list
 	 */
-	public List<Gene> findGenesByDisease(TermId termId) {
-		List<Gene> genes = new ArrayList<>();
+	public Collection<Gene> findGenesByDisease(TermId termId) {
+		Collection<Gene> genes = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
 			Result result = tx.run("MATCH (d: Disease {id: $id})-[:EXPRESSES]-(g: Gene) RETURN g", parameters("id", termId.getValue()));
 			while (result.hasNext()) {
@@ -51,8 +52,8 @@ public class DiseaseRepository {
 	 * @param termId the termId of the disease
 	 * @return List of diseases or empty list
 	 */
-	public List<Phenotype> findPhenotypesByDisease(TermId termId){
-		List<Phenotype> phenotypes = new ArrayList<>();
+	public Collection<Phenotype> findPhenotypesByDisease(TermId termId){
+		Collection<Phenotype> phenotypes = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
 			Result result = tx.run("MATCH (d: Disease {id: $id})-[:MANIFESTS]-(p: Phenotype)-[:WITH_METADATA {context: $id }]-(pm: PhenotypeMetadata) RETURN p, pm", parameters("id", termId.getValue()));
 			while (result.hasNext()) {

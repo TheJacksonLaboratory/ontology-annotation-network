@@ -7,6 +7,7 @@ import org.jax.oan.core.Phenotype;
 import org.jax.oan.repository.GeneRepository;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
+import java.util.Collection;
 import java.util.List;
 
 @Singleton
@@ -19,8 +20,8 @@ public class GeneService {
 	}
 
 	public GeneAnnotationDto findAll(TermId termId){
-		List<Disease> diseases = this.geneRepository.findDiseasesByGene(termId);
-		List<Phenotype> phenotypes = this.geneRepository.findPhenotypesByGene(termId);
+		Collection<Disease> diseases = this.geneRepository.findDiseasesByGene(termId);
+		Collection<Phenotype> phenotypes = this.geneRepository.findPhenotypesByGene(termId);
 		return new GeneAnnotationDto(diseases, phenotypes);
 	}
 }

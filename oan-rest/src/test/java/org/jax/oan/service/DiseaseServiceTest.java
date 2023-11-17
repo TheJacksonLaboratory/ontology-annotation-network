@@ -49,7 +49,7 @@ class DiseaseServiceTest {
 						new Gene(TermId.of("NCBIGene:00093"),"TP4"),
 						new Gene(TermId.of("NCBIGene:02002"),"YZ")
 				), List.of(
-						new Phenotype(TermId.of("HP:099233"),"Long legs")
+						new Phenotype(TermId.of("HP:099233"),"Long legs", null, null)
 				)),
 				Arguments.of(
 						TermId.of("MONDO:0392932"),

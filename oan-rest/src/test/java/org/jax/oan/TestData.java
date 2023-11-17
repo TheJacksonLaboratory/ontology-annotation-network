@@ -18,8 +18,8 @@ public class TestData {
 
 	public static List<Phenotype> phenotypes(){
 		return List.of(
-				new Phenotype(TermId.of("HP:099233"),"Long legs"),
-				new Phenotype(TermId.of("HP:434444"),"Big bicep small arm")
+				new Phenotype(TermId.of("HP:099233"),"Long legs", null, null),
+				new Phenotype(TermId.of("HP:434444"),"Big bicep small arm", null, null)
 		);
 	}
 

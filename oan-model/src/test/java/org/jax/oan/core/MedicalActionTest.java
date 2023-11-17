@@ -11,8 +11,8 @@ class MedicalActionTest {
 	void create(){
 		TermId id = TermId.of("MAXO:0000001");
 		String name = "Surgical Procedure";
-		OntologyClass ontologyClass = new MedicalAction(id, name);
-		OntologyClass ontologyClassOther = new MedicalAction(id, name);
+		OntologyEntity ontologyClass = new MedicalAction(id, name);
+		OntologyEntity ontologyClassOther = new MedicalAction(id, name);
 		assertEquals(ontologyClass.getId(), id.getValue());
 		assertEquals(ontologyClass.getName(), name);
 		assertEquals(ontologyClass, ontologyClassOther);

@@ -11,8 +11,8 @@ class DiseaseTest {
 	void create(){
 		TermId id = TermId.of("OMIM:0000001");
 		String name = "Rare Syndrome";
-		OntologyClass ontologyClass = new Disease(id, name);
-		OntologyClass ontologyClassOther = new Disease(id, name);
+		OntologyEntity ontologyClass = new Disease(id, name);
+		OntologyEntity ontologyClassOther = new Disease(id, name);
 		assertEquals(ontologyClass.getId(), id.getValue());
 		assertEquals(ontologyClass.getName(), name);
 		assertEquals(ontologyClass, ontologyClassOther);

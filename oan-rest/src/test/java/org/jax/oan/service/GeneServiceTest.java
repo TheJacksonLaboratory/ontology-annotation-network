@@ -49,7 +49,7 @@ class GeneServiceTest {
 						new Disease(TermId.of("MONDO:099233"),"Really bad one"),
 						new Disease(TermId.of("DECIPHER:434444"),"Kinda bad one")
 				), List.of(
-						new Phenotype(TermId.of("HP:099233"),"Long legs")
+						new Phenotype(TermId.of("HP:099233"),"Long legs", null, null)
 				)),
 				Arguments.of(
 						TermId.of("NCBIGene:900"),

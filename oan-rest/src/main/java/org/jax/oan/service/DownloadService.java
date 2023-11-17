@@ -12,6 +12,7 @@ import org.monarchinitiative.phenol.ontology.data.TermId;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
@@ -32,32 +33,32 @@ public class DownloadService {
 		switch (source){
 			case DISEASE -> {
 				if (target.equals(SupportedEntity.PHENOTYPE)){
-					List<Phenotype> phenotypes = this.diseaseRepository.findPhenotypesByDisease(termId);
+					Collection<Phenotype> phenotypes = this.diseaseRepository.findPhenotypesByDisease(termId);
 					return buildFile(String.format("phenotypes_for_%s", termId.getValue()), phenotypes);
 
 				} else {
-					List<Gene> genes = this.diseaseRepository.findGenesByDisease(termId);
+					Collection<Gene> genes = this.diseaseRepository.findGenesByDisease(termId);
 					return buildFile(String.format("genes_for_%s", termId.getValue()), genes);
 				}
 			}
 			case GENE -> {
 				if(target.equals(SupportedEntity.DISEASE)){
-					List<Disease> diseases = this.geneRepository.findDiseasesByGene(termId);
+					Collection<Disease> diseases = this.geneRepository.findDiseasesByGene(termId);
 					return buildFile(String.format("diseases_for_%s", termId.getValue()), diseases);
 				} else {
-					List<Phenotype> phenotypes = this.geneRepository.findPhenotypesByGene(termId);
+					Collection<Phenotype> phenotypes = this.geneRepository.findPhenotypesByGene(termId);
 					return buildFile(String.format("phenotypes_for_%s", termId.getValue()), phenotypes);
 				}
 			}
 			case PHENOTYPE -> {
 				if(target.equals(SupportedEntity.DISEASE)){
-					List<Disease> diseases = this.phenotypeRepository.findDiseasesByTerm(termId);
+					Collection<Disease> diseases = this.phenotypeRepository.findDiseasesByTerm(termId);
 					return buildFile(String.format("diseases_for_%s", termId.getValue()), diseases);
 				} else if(target.equals(SupportedEntity.GENE)) {
-					List<Gene> genes = this.phenotypeRepository.findGenesByTerm(termId);
+					Collection<Gene> genes = this.phenotypeRepository.findGenesByTerm(termId);
 					return buildFile(String.format("genes_for_%s", termId.getValue()), genes);
 				} else {
-					List<Assay> assays = this.phenotypeRepository.findAssaysByTerm(termId);
+					Collection<Assay> assays = this.phenotypeRepository.findAssaysByTerm(termId);
 					return buildFile(String.format("assays_for_%s", termId.getValue()), assays);
 				}
 			}
@@ -65,19 +66,18 @@ public class DownloadService {
 		}
 	}
 
-	public SystemFile buildFile(String filename, List<? extends OntologyClass> targetList){
+	public SystemFile buildFile(String filename, Collection<? extends OntologyEntity> targetList){
 		try {
 			File file = File.createTempFile(filename, ".tsv");
 			try (PrintWriter pw = new PrintWriter(file)) {
 				pw.println(String.format("%s \t %s", "id", "name"));
-				for (OntologyClass target : targetList.stream().sorted(Comparator.comparing((OntologyClass o) -> o.getName())).toList()) {
+				for (OntologyEntity target : targetList.stream().sorted(Comparator.comparing(OntologyEntity::getName)).toList()) {
 					pw.println(String.format("%s \t %s", target.getId(), target.getName()));
 				}
 			}
 			return new SystemFile(file).attach(filename);
 		} catch (IOException e) {
-			e.printStackTrace();
-			throw new OntologyAnnotationNetworkRuntimeException("Could not generate association file.");
+			throw new OntologyAnnotationNetworkRuntimeException("Could not generate association file.", e);
 		}
 	}
 }

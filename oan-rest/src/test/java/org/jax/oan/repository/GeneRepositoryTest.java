@@ -12,6 +12,7 @@ import org.monarchinitiative.phenol.ontology.data.TermId;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Transaction;
 
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,17 +50,17 @@ class GeneRepositoryTest {
 
 	@Test
 	void findPhenotypesByGene() {
-		List<Phenotype> phenotypes = this.geneRepository.findPhenotypesByGene(TermId.of("NCBIGene:9999"));
-		List<Phenotype> expected = List.of(
-				new Phenotype(TermId.of("HP:000001"), "short stature", "")
+		Collection<Phenotype> phenotypes = this.geneRepository.findPhenotypesByGene(TermId.of("NCBIGene:9999"));
+		Collection<Phenotype> expected = List.of(
+				new Phenotype(TermId.of("HP:000001"), "short stature", "", null)
 		);
 		assertTrue(phenotypes.containsAll(expected));
 	}
 
 	@Test
 	void findDiseasesByGene() {
-		List<Disease> diseases = this.geneRepository.findDiseasesByGene(TermId.of("NCBIGene:9999"));
-		List<Disease> expected = List.of(
+		Collection<Disease> diseases = this.geneRepository.findDiseasesByGene(TermId.of("NCBIGene:9999"));
+		Collection<Disease> expected = List.of(
 				new Disease(TermId.of("OMIM:092320"), "Some bad disease")
 		);
 		assertTrue(diseases.containsAll(expected));

@@ -10,6 +10,7 @@ import org.neo4j.driver.Transaction;
 import org.neo4j.driver.Value;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static org.neo4j.driver.Values.parameters;
@@ -28,13 +29,13 @@ public class GeneRepository {
 	 * @param termId the termId of the gene
 	 * @return List of phenotypes or empty list
 	 */
-	public List<Phenotype> findPhenotypesByGene(TermId termId){
-		List<Phenotype> phenotypes = new ArrayList<>();
+	public Collection<Phenotype> findPhenotypesByGene(TermId termId){
+		Collection<Phenotype> phenotypes = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
 			Result result = tx.run("MATCH (g: Gene {id: $id})-[:DETERMINES]-(p:Phenotype) RETURN p", parameters("id", termId.getValue()));
 			while (result.hasNext()) {
 				Value value = result.next().get("p");
-				Phenotype phenotype = new Phenotype(TermId.of(value.get("id").asString()), value.get("name").asString(), value.get("category").asString());
+				Phenotype phenotype = new Phenotype(TermId.of(value.get("id").asString()), value.get("name").asString(), value.get("category").asString(), null);
 				phenotypes.add(phenotype);
 			}
 		}
@@ -46,7 +47,7 @@ public class GeneRepository {
 	 * @param termId the termId of the gene
 	 * @return List of diseases or empty list
 	 */
-	public List<Disease> findDiseasesByGene(TermId termId) {
+	public Collection<Disease> findDiseasesByGene(TermId termId) {
 		List<Disease> diseases = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
 			Result result = tx.run("MATCH (d: Disease)-[:EXPRESSES]->(g: Gene {id: $id}) RETURN d", parameters("id", termId.getValue()));

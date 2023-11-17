@@ -1,7 +1,7 @@
 package org.jax.oan.ontology;
 
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import org.apache.commons.collections.map.HashedMap;
+import org.jax.oan.exception.OntologyAnnotationNetworkDataException;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.graph.Operations;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,6 @@ import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataLoader;
 import org.monarchinitiative.phenol.io.OntologyLoader;
 import org.monarchinitiative.phenol.ontology.data.Ontology;
-import org.monarchinitiative.phenol.ontology.data.Term;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
@@ -49,7 +48,7 @@ class HpoGraphLoaderTest {
 	}
 
 	void configureGraph(HpoAssociationData associations, HpoaDiseaseDataContainer container, Ontology ontology,
-						Path loincPath){
+						Path loincPath) throws OntologyAnnotationNetworkDataException {
 		operations.truncate();
 		graphLoader.phenotypes(session, ontology.getTerms(), Map.of());
 		graphLoader.diseases(session, container);
