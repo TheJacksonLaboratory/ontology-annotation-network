@@ -15,3 +15,4 @@ out/
 .factorypath
 
 oan-etl/data/
+oan-rest/dependency-reduced-pom.xml
