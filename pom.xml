@@ -131,12 +131,6 @@
         <version>${picocli.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.micronaut</groupId>
-        <artifactId>micronaut-inject-java</artifactId>
-        <version>${micronaut.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
         <groupId>io.micronaut.test</groupId>
         <artifactId>micronaut-test-rest-assured</artifactId>
         <version>${micronaut.version}</version>

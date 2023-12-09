@@ -14,6 +14,7 @@ public class HpoDataResolver {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HpoDataResolver.class);
 
 	private final Path dataDirectory;
+
 	public static HpoDataResolver of(Path dataDirectory) throws OntologyAnnotationNetworkException {
 		return new HpoDataResolver(dataDirectory);
 	}
