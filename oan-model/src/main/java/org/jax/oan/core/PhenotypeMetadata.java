@@ -7,9 +7,9 @@ import java.util.Objects;
 public record PhenotypeMetadata(String sex, String onset, String frequency, List<String> sources) {
 
 	public PhenotypeMetadata(String sex, String onset, String frequency, List<String> sources) {
-		this.sex = sex == null ? "" : sex;
-		this.onset = onset == null ? "" : onset;
-		this.frequency = frequency == null ? "" : frequency;
+		this.sex = sex;
+		this.onset = onset;
+		this.frequency = frequency;
 		this.sources = sources == null ? Collections.emptyList() : sources;
 	}
 

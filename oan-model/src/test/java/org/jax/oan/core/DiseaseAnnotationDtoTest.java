@@ -17,8 +17,8 @@ class DiseaseAnnotationDtoTest {
 	@MethodSource
 	void create(Map<String, List<Phenotype>> phenotypeByCategory, List<Gene> genes){
 		DiseaseAnnotationDto dto = new DiseaseAnnotationDto(phenotypeByCategory, genes);
-		assertEquals(dto.phenotypeByCategory().keySet(), phenotypeByCategory.keySet());
-		assertEquals(dto.phenotypeByCategory().values(), phenotypeByCategory.values());
+		assertEquals(dto.categories().keySet(), phenotypeByCategory.keySet());
+		assertEquals(dto.categories().values(), phenotypeByCategory.values());
 		assertEquals(dto.genes(), genes);
 	}
 

@@ -8,17 +8,15 @@ import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.exceptions.HttpStatusException;
 import io.micronaut.http.server.types.files.SystemFile;
 import io.micronaut.serde.annotation.SerdeImport;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jax.oan.core.*;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
-import org.jax.oan.service.DiseaseService;
-import org.jax.oan.service.DownloadService;
-import org.jax.oan.service.GeneService;
-import org.jax.oan.service.PhenotypeService;
+import org.jax.oan.service.*;
 import org.monarchinitiative.phenol.base.PhenolRuntimeException;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
-@Controller("${api-prefix}/annotation")
+@Controller("${api-prefix}/network/annotation")
 @SerdeImport(Disease.class)
 @SerdeImport(Gene.class)
 @SerdeImport(Phenotype.class)
@@ -35,7 +33,9 @@ public class AnnotationController {
 
 	private final DownloadService downloadService;
 
-	public AnnotationController(PhenotypeService phenotypeService, GeneService geneService, DiseaseService diseaseService, DownloadService downloadService) {
+	public AnnotationController(PhenotypeService phenotypeService,
+								GeneService geneService, DiseaseService diseaseService,
+								DownloadService downloadService) {
 		this.phenotypeService = phenotypeService;
 		this.geneService = geneService;
 		this.diseaseService = diseaseService;

@@ -47,7 +47,7 @@ class AnnotationControllerTest {
 	void positive_by_disease(RequestSpecification spec) {
 		when(diseaseService.findAll(TermId.of("OMIM:039293")))
 				.thenReturn(new DiseaseAnnotationDto(Map.of("limbs", phenotypes()), genes()));
-		spec.when().get("/api/annotation/OMIM:039293").then()
+		spec.when().get("/api/network/annotation/OMIM:039293").then()
 				.statusCode(200).body("genes.id",
 						hasItems("NCBIGene:00093", "NCBIGene:02002"));
 	}
@@ -56,7 +56,7 @@ class AnnotationControllerTest {
 	void positive_by_phenotype(RequestSpecification spec) {
 		when(phenotypeService.findAll(TermId.of("HP:0000001")))
 				.thenReturn(new PhenotypeAnnotationDto(diseases(), genes(), assays()));
-		spec.when().get("/api/annotation/HP:0000001").then()
+		spec.when().get("/api/network/annotation/HP:0000001").then()
 				.statusCode(200)
 				.body("diseases.id", hasItems("MONDO:099233", "DECIPHER:434444"))
 				.body("genes.id", hasItems("NCBIGene:00093", "NCBIGene:02002"))
@@ -68,7 +68,7 @@ class AnnotationControllerTest {
 	void positive_by_gene(RequestSpecification spec) {
 		when(geneService.findAll(TermId.of("NCBIGene:093232")))
 				.thenReturn(new GeneAnnotationDto(diseases(), phenotypes()));
-		spec.when().get("/api/annotation/NCBIGene:093232").then()
+		spec.when().get("/api/network/annotation/NCBIGene:093232").then()
 				.statusCode(200)
 				.body("diseases.id", hasItems("MONDO:099233", "DECIPHER:434444"))
 				.body("phenotypes.id", hasItems("HP:099233", "HP:434444"));
@@ -76,12 +76,12 @@ class AnnotationControllerTest {
 
 	@Test
 	void negative_by_no_prefix(RequestSpecification spec){
-		spec.when().get("/api/annotation/FAKE:093232").then().statusCode(400);
+		spec.when().get("/api/network/annotation/FAKE:093232").then().statusCode(400);
 	}
 
 	@Test
 	void negative_by_incorrect_term(RequestSpecification spec){
-		spec.when().get("/api/annotation/not-right").then().statusCode(400);
+		spec.when().get("/api/network/annotation/not-right").then().statusCode(400);
 	}
 
 	@Test
@@ -89,24 +89,24 @@ class AnnotationControllerTest {
 		SystemFile file = buildSimpleSpreadSheet();
 		when(downloadService.associations(TermId.of("OMIM:0392932"), SupportedEntity.DISEASE, SupportedEntity.GENE))
 				.thenReturn(file);
-		spec.when().get("/api/annotation/OMIM:0392932/download/gene").then()
+		spec.when().get("/api/network/annotation/OMIM:0392932/download/gene").then()
 				.statusCode(200).contentType("text/tab-separated-values");
 		Files.deleteIfExists(file.getFile().toPath());
 	}
 
 	@Test
 	void negative_download_file_no_prefix(RequestSpecification spec){
-		spec.when().get("/api/annotation/FAKE:093232/download/gene").then().statusCode(400);
+		spec.when().get("/api/network/annotation/FAKE:093232/download/gene").then().statusCode(400);
 	}
 
 	@Test
 	void negative_download_file_incorrect_term(RequestSpecification spec){
-		spec.when().get("/api/annotation/not-right/download/disease").then().statusCode(400);
+		spec.when().get("/api/network/annotation/not-right/download/disease").then().statusCode(400);
 	}
 
 	@Test
 	void negative_download_file_bad_type(RequestSpecification spec){
-		spec.when().get("/api/annotation/OMIM:0392932/download/disease").then().statusCode(400);
+		spec.when().get("/api/network/annotation/OMIM:0392932/download/disease").then().statusCode(400);
 	}
 
 	private static SystemFile buildSimpleSpreadSheet() throws IOException {

@@ -3,6 +3,7 @@ package org.jax.oan.repository;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
 import org.jax.oan.core.Disease;
+import org.jax.oan.core.Gene;
 import org.jax.oan.core.Phenotype;
 import org.jax.oan.core.PhenotypeMetadata;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,5 +65,14 @@ class GeneRepositoryTest {
 				new Disease(TermId.of("OMIM:092320"), "Some bad disease")
 		);
 		assertTrue(diseases.containsAll(expected));
+	}
+
+	@Test
+	void findGene() {
+		Collection<Gene> genes = this.geneRepository.findGenes("7777");
+		Collection<Gene> expected = List.of(
+				new Gene(TermId.of("NCBIGene:7777"), "MNN")
+		);
+		assertTrue(genes.containsAll(expected));
 	}
 }

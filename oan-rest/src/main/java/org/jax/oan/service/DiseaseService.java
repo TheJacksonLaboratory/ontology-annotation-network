@@ -4,6 +4,7 @@ import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotNull;
 import org.jax.oan.core.DiseaseAnnotationDto;
 import org.jax.oan.core.Gene;
+import org.jax.oan.core.OntologyEntity;
 import org.jax.oan.core.Phenotype;
 import org.jax.oan.repository.DiseaseRepository;
 import org.monarchinitiative.phenol.ontology.data.TermId;
@@ -26,7 +27,7 @@ public class DiseaseService {
 		Collection<Phenotype> phenotypes = this.diseaseRepository.findPhenotypesByDisease(termId);
 		Collection<Gene> genes = this.diseaseRepository.findGenesByDisease(termId);
 		return new DiseaseAnnotationDto(
-				phenotypes.stream().filter(p -> p.getCategory().isEmpty()).collect(Collectors.groupingBy(
+				phenotypes.stream().filter(p -> p.getCategory().isPresent()).collect(Collectors.groupingBy(
 						p -> p.getCategory().orElse("UNKNOWN")
 				)),
 				genes);
