@@ -12,14 +12,14 @@ import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataLoader;
 import org.monarchinitiative.phenol.io.OntologyLoader;
-import org.monarchinitiative.phenol.ontology.data.Ontology;
-import org.monarchinitiative.phenol.ontology.data.TermId;
+import org.monarchinitiative.phenol.ontology.data.*;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.types.Node;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,25 +35,28 @@ class HpoOntologyAnnotationLoaderTest {
 
 	final Driver driver;
 
+
 	public HpoOntologyAnnotationLoaderTest(Driver driver) throws IOException, OntologyAnnotationNetworkException {
 		this.driver = driver;
 		final GraphDatabaseWriter graphDatabaseWriter = new GraphDatabaseWriter(driver);
 		this.graphLoader = new HpoOntologyAnnotationLoader(graphDatabaseWriter);
 		this.graphDatabaseOperations = new GraphDatabaseOperations(graphDatabaseWriter);
 		HpoDataResolver hpoDataResolver = HpoDataResolver.of(Path.of("src/test/resources"));
-		Ontology ontology = OntologyLoader.loadOntology(hpoDataResolver.hpJson().toFile());
+		Ontology hpoOntology = OntologyLoader.loadOntology(hpoDataResolver.hpJson().toFile());
+		Ontology mondoOntology = OntologyLoader.loadOntology(hpoDataResolver.mondoJson().toFile());
 		final HpoaDiseaseDataContainer container = HpoaDiseaseDataLoader.of(Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET)).loadDiseaseData(hpoDataResolver.phenotypeAnnotations());
-		final HpoAssociationData associations = HpoAssociationData.builder(ontology).mim2GeneMedgen(hpoDataResolver.mim2geneMedgen())
+		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).mim2GeneMedgen(hpoDataResolver.mim2geneMedgen())
 				.hpoDiseases(container).hgncCompleteSetArchive(hpoDataResolver.hgncCompleteSet()).build();
 		graphDatabaseWriter.truncate();
-		configureGraph(associations, container, ontology, hpoDataResolver.loinc());
+		configureGraph(associations, container, hpoOntology, mondoOntology, hpoDataResolver.loinc());
 	}
 
-	void configureGraph(HpoAssociationData associations, HpoaDiseaseDataContainer container, Ontology ontology,
+	void configureGraph(HpoAssociationData associations,
+						HpoaDiseaseDataContainer container, Ontology hpoOntology, Ontology mondoOntology,
 						Path loincPath) throws OntologyAnnotationNetworkDataException {
-		graphLoader.phenotypes(ontology.getTerms(), Map.of());
-		graphLoader.diseases(container);
-		graphLoader.diseaseToPhenotype(container, ontology);
+		graphLoader.phenotypes(hpoOntology.getTerms(), Map.of());
+		graphLoader.diseases(container, mondoOntology.getTerms());
+		graphLoader.diseaseToPhenotype(container, hpoOntology);
 		graphLoader.genes(associations);
 		graphLoader.diseaseToGene(associations);
 		graphLoader.assayToPhenotype(loincPath);
@@ -78,6 +81,7 @@ class HpoOntologyAnnotationLoaderTest {
 			Node node = session.run("MATCH (n: Disease {id: 'OMIM:619340'}) RETURN n").single().get("n").asNode();
 			assertEquals(2, nodes.size());
 			assertEquals("Developmental and epileptic encephalopathy 96", node.get("name").asString());
+			assertEquals("MONDO:0000001", node.get("mondoId").asString());
 		}
 	}
 
@@ -146,5 +150,19 @@ class HpoOntologyAnnotationLoaderTest {
 
 	@Test
 	void formatFrequency() {
+	}
+
+	@Test
+	void findMondoEquivalent(){
+		TermId target = TermId.of("OMIM:619340");
+		Collection<Term> diseases = List.of(
+				Term.builder(target).xrefs(
+						List.of(
+								new Dbxref("OMIM:619340", "", null)
+						)
+				).name("Bad Disease 1").build()
+		);
+
+		assertEquals(target, HpoOntologyAnnotationLoader.findMondoEquivalent(target,diseases).orElse(null));
 	}
 }

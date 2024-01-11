@@ -46,7 +46,7 @@ public class HpoDataResolver {
 	}
 
 	public Path hpJson(){
-		return dataDirectory.resolve("hp-simple-non-classified.json");
+		return dataDirectory.resolve("hp-base.json");
 	}
 
 	public Path hgncCompleteSet() {
@@ -68,4 +68,6 @@ public class HpoDataResolver {
 	public Path loinc(){
 		return dataDirectory.resolve("loinc2hpo-annotations-merged.tsv");
 	}
+
+	public Path mondoJson() { return dataDirectory.resolve("mondo-base.json"); }
 }

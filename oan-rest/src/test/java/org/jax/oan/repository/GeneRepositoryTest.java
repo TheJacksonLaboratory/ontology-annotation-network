@@ -62,7 +62,7 @@ class GeneRepositoryTest {
 	void findDiseasesByGene() {
 		Collection<Disease> diseases = this.geneRepository.findDiseasesByGene(TermId.of("NCBIGene:9999"));
 		Collection<Disease> expected = List.of(
-				new Disease(TermId.of("OMIM:092320"), "Some bad disease")
+				new Disease(TermId.of("OMIM:092320"), "Some bad disease", "")
 		);
 		assertTrue(diseases.containsAll(expected));
 	}

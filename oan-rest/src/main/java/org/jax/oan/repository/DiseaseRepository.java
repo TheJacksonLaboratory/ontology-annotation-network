@@ -38,7 +38,7 @@ public class DiseaseRepository {
 			Result result = tx.run("MATCH (d: Disease) WHERE toLower(d.name) CONTAINS $q OR toLower(d.id) CONTAINS $q RETURN d", parameters("q", query.toLowerCase()));
 			while (result.hasNext()) {
 				Value value = result.next().get("d");
-				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString());
+				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(), value.get("mondoId").asString());
 				diseases.add(disease);
 			}
 		}

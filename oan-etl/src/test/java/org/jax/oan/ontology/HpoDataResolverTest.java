@@ -14,7 +14,7 @@ class HpoDataResolverTest {
 	void of() throws OntologyAnnotationNetworkException {
 		Path dataDirectory = Path.of("src/test/resources");
 		HpoDataResolver dataResolver = HpoDataResolver.of(dataDirectory);
-		assertEquals(dataResolver.hpJson(), dataDirectory.resolve("hp-simple-non-classified.json"));
+		assertEquals(dataResolver.hpJson(), dataDirectory.resolve("hp-base.json"));
 		assertEquals(dataResolver.mim2geneMedgen(), dataDirectory.resolve("mim2gene_medgen"));
 		assertEquals(dataResolver.hgncCompleteSet(), dataDirectory.resolve("hgnc_complete_set.txt"));
 		assertEquals(dataResolver.phenotypeAnnotations(), dataDirectory.resolve("phenotype.hpoa"));

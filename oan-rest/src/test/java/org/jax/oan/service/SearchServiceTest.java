@@ -5,6 +5,7 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
 import org.jax.oan.core.Disease;
 import org.jax.oan.core.Gene;
+import org.jax.oan.core.SearchDto;
 import org.jax.oan.repository.DiseaseRepository;
 import org.jax.oan.repository.GeneRepository;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,8 +38,8 @@ class SearchServiceTest {
 	void test_search_gene(String query, Collection<Gene> genes){
 		when(geneRepository.findGenes(query))
 				.thenReturn(genes);
-		Collection<Gene> expected = (Collection<Gene>) searchService.searchGene(query);
-		assertEquals(expected, genes);
+		SearchDto expected = searchService.searchGene(query, 0, 10);
+		assertEquals(expected.results(), genes);
 	}
 
 
@@ -47,15 +48,15 @@ class SearchServiceTest {
 	void test_search_disease(String query, Collection<Disease> diseases){
 		when(diseaseRepository.findDisease(query))
 				.thenReturn(diseases);
-		Collection<Disease> expected = (Collection<Disease>) searchService.searchDisease(query);
-		assertEquals(expected, diseases);
+		SearchDto expected = searchService.searchDisease(query, 0 ,10);
+		assertEquals(expected.results(), diseases);
 	}
 
 	private static Stream<Arguments> test_search_disease(){
 		return Stream.of(
 				Arguments.of("marf", List.of(
-						new Disease(TermId.of("OMIM:039203"), "Large Marfanoid Syndrome"),
-						new Disease(TermId.of("MONDO:99999"), "Marfan Syndrome")
+						new Disease(TermId.of("OMIM:039203"), "Large Marfanoid Syndrome", ""),
+						new Disease(TermId.of("MONDO:99999"), "Marfan Syndrome", "MONDO:009121")
 				))
 		);
 	}

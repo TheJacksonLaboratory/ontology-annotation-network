@@ -14,6 +14,7 @@ import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataLoader;
 import org.monarchinitiative.phenol.io.OntologyLoader;
+import org.monarchinitiative.phenol.ontology.data.Dbxref;
 import org.monarchinitiative.phenol.ontology.data.Ontology;
 import org.monarchinitiative.phenol.ontology.data.Term;
 import org.monarchinitiative.phenol.ontology.data.TermId;
@@ -50,21 +51,22 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	 * edges Disease - Manifest - Phenotype - Metadata (with disease id) - PhenotypeMetadata,
 	 * Disease - Expresses - Gene, Assay - Measures - Phenotype,
 	 *
-	 * @param hpoDataDirectory
-	 * @throws IOException
-	 * @throws OntologyAnnotationNetworkException
+	 * @param hpoDataDirectory the directory for hpo graph.
+	 * @throws IOException if a file can't be found
+	 * @throws OntologyAnnotationNetworkException if things are not okay
 	 */
 	@Override
 	public void load(Path hpoDataDirectory, Set<DiseaseDatabase> databases) throws IOException, OntologyAnnotationNetworkException {
 		final HpoDataResolver dataResolver = HpoDataResolver.of(hpoDataDirectory);
 		final Ontology hpoOntology = OntologyLoader.loadOntology(dataResolver.hpJson().toFile());
+		final Ontology mondoOntology = OntologyLoader.loadOntology(dataResolver.mondoJson().toFile());
 		final HpoaDiseaseDataContainer diseases = HpoaDiseaseDataLoader.of(databases).loadDiseaseData(dataResolver.phenotypeAnnotations());
 		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).orphaToGenePath(dataResolver.orpha2Gene()).mim2GeneMedgen(dataResolver.mim2geneMedgen())
 				.hpoDiseases(diseases).hgncCompleteSetArchive(dataResolver.hgncCompleteSet()).build();
 		graphDatabaseOperations.dropIndexes(OntologyModule.HPO);
 		Map<TermId, String> categories = phenotypeToCategory(hpoOntology);
 		phenotypes(hpoOntology.getTerms(), categories);
-		diseases(diseases);
+		diseases(diseases, mondoOntology.getTerms());
 		genes(associations);
 		graphDatabaseOperations.createIndexes(OntologyModule.HPO);
 		phenotypeToPhenotype(hpoOntology.getTerms(), hpoOntology);
@@ -106,12 +108,17 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		logger.info("Done.");
 	}
 
-	void diseases(HpoaDiseaseDataContainer diseases){
+	void diseases(HpoaDiseaseDataContainer diseases, Collection<Term> mondoTerms){
 		logger.info("Loading Diseases...");
 		ArrayList<Query> queries = new ArrayList<>(Collections.emptyList());
 		diseases.diseaseData().forEach(d -> {
-					Query query = new Query("CREATE (d:Disease {id: $id, name: $name})",
-							parameters("name", d.name(), "id", d.id().toString()));
+					Optional<TermId> equivalent = findMondoEquivalent(d.id(), mondoTerms);
+					String mondoId = "";
+					if (equivalent.isPresent()){
+						mondoId = equivalent.get().getValue();
+					}
+					Query query =  new Query("CREATE (d:Disease {id: $id, name: $name, mondoId: $mondoId})",
+							parameters("name", d.name(), "id", d.id().toString(), "mondoId", mondoId));
 					queries.add(query);
 				}
 		);
@@ -239,9 +246,15 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	static String formatFrequency(String frequency, Ontology ontology){
 		if(frequency.startsWith("HP:")){
 			return ontology.getTermLabel(TermId.of(frequency)).orElse("");
-		} else if(frequency.equals("n/a") || frequency.equals("")) {
+		} else if(frequency.equals("n/a") || frequency.isEmpty()) {
 			return "";
 		}
 		return frequency;
+	}
+
+	static Optional<TermId> findMondoEquivalent(TermId target, Collection<Term> diseases){
+		return diseases.stream().filter(term ->
+				term.getXrefs().stream().map(Dbxref::getName).anyMatch(s -> s.equals(target.toString()))
+		).map(Term::id).findFirst();
 	}
 }
