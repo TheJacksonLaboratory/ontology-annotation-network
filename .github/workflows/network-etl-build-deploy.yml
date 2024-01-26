@@ -1,4 +1,4 @@
-name: Build Ontology Annotation Network ETL Deploy.
+name: Deploy Graph Container
 on:
   workflow_dispatch:
 env:
@@ -8,7 +8,7 @@ env:
   GCLOUD_REGISTRY_PROJECT_ID: ${{ secrets.GCLOUD_REGISTRY_PROJECT_ID }}
   GCLOUD_REGISTRY_IMAGE_ENV: docker
   GCLOUD_REGISTRY_IMAGE_PROJECT: ontology
-  SERVICE_NAME: ontology-annotation-etl
+  SERVICE_NAME: ontology-annotation-network
 
 jobs:
   build:
@@ -30,7 +30,7 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v1'
       - name: Get project version
         run: |
-          echo "PROJECT_VERSION=$(./gradlew properties -q | awk '/^version:/ {print $2}')" >> $GITHUB_ENV
+          echo "PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
 
       - name: Maven Verify
         run: mvn clean package -pl oan-etl -am
@@ -42,8 +42,7 @@ jobs:
       - name: Start our builder database container
         run: |
           docker pull neo4j:community-bullseye
-          docker run docker run -d --name=builder-neo4j  -p7474:7474 -p7687:7687 -v ./neo4j/data:/data  --env NEO4J_AUTH=neo4j/password neo4j:community-bullseye
-          docker exec builder-neo4j
+          docker run -d --name=builder-neo4j  -p7474:7474 -p7687:7687 -v ./neo4j/data:/data  --env NEO4J_AUTH=neo4j/password neo4j:community-bullseye
       - name: Fetch our data
         run: sh oan-etl/update.sh oan-etl/data/
 
@@ -72,7 +71,7 @@ jobs:
           gcloud run deploy $SERVICE_NAME --quiet \
             --image "${DOCKER_IMAGE}" --project "${GCLOUD_PROJECT_ID}" \
             --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
-            --memory 2Gi --cpu 2 --service-account "${GCLOUD_SERVICE_ACCOUNT}"
+            --memory 2Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
           
           echo "Invoke endpoint:"
           gcloud run services list --platform managed --format json | jq -r \

@@ -46,7 +46,7 @@ class SearchServiceTest {
 	@ParameterizedTest
 	@MethodSource
 	void test_search_disease(String query, Collection<Disease> diseases){
-		when(diseaseRepository.findDisease(query))
+		when(diseaseRepository.findDiseases(query))
 				.thenReturn(diseases);
 		SearchDto expected = searchService.searchDisease(query, 0 ,10);
 		assertEquals(expected.results(), diseases);
@@ -55,8 +55,8 @@ class SearchServiceTest {
 	private static Stream<Arguments> test_search_disease(){
 		return Stream.of(
 				Arguments.of("marf", List.of(
-						new Disease(TermId.of("OMIM:039203"), "Large Marfanoid Syndrome", ""),
-						new Disease(TermId.of("MONDO:99999"), "Marfan Syndrome", "MONDO:009121")
+						new Disease(TermId.of("OMIM:039203"), "Large Marfanoid Syndrome", "", ""),
+						new Disease(TermId.of("MONDO:99999"), "Marfan Syndrome", "MONDO:009121", "Rare disease")
 				))
 		);
 	}

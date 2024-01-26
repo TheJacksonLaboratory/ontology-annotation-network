@@ -1,5 +1,6 @@
 package org.jax.oan.ontology;
 
+import org.jax.oan.core.AlternativePrefix;
 import org.jax.oan.exception.OntologyAnnotationNetworkDataException;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
@@ -111,14 +112,16 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	void diseases(HpoaDiseaseDataContainer diseases, Collection<Term> mondoTerms){
 		logger.info("Loading Diseases...");
 		ArrayList<Query> queries = new ArrayList<>(Collections.emptyList());
-		diseases.diseaseData().forEach(d -> {
-					Optional<TermId> equivalent = findMondoEquivalent(d.id(), mondoTerms);
+		diseases.diseaseData().stream().distinct().forEach(d -> {
+					Optional<Term> equivalent = findMondoEquivalent(d.id(), mondoTerms);
 					String mondoId = "";
+					String description = "No disease description found.";
 					if (equivalent.isPresent()){
-						mondoId = equivalent.get().getValue();
+						mondoId = equivalent.get().id().getValue();
+						description = equivalent.get().getDefinition();
 					}
-					Query query =  new Query("CREATE (d:Disease {id: $id, name: $name, mondoId: $mondoId})",
-							parameters("name", d.name(), "id", d.id().toString(), "mondoId", mondoId));
+					Query query =  new Query("CREATE (d:Disease {id: $id, name: $name, mondoId: $mondoId, description: $description})",
+							parameters("name", d.name(), "id", d.id().toString(), "mondoId", mondoId, "description", description));
 					queries.add(query);
 				}
 		);
@@ -194,7 +197,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 					sex = "";
 				}
 				Query query = new Query("MATCH (d:Disease {id: $diseaseId}), (p:Phenotype {id: $phenotypeId})" +
-								"MERGE (d)-[:MANIFESTS]->(p)<-[:WITH_METADATA {context: $diseaseId}]-(pm: PhenotypeMetadata {onset: $onset, frequency: $frequency, sex: $sex," +
+								" MERGE (d)-[:MANIFESTS]->(p)<-[:WITH_METADATA {context: $diseaseId}]-(pm: PhenotypeMetadata {onset: $onset, frequency: $frequency, sex: $sex," +
 								"sources: $sources})",
 						parameters(
 								"diseaseId", line.diseaseId().toString(),
@@ -227,7 +230,8 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 
 	Map<TermId, String> phenotypeToCategory(Ontology hpoOntology){
 		HpoCategoryMap hpoCatMap = new HpoCategoryMap();
-		List<TermId> allTerms = hpoOntology.getTerms().stream().map(Term::id).distinct().toList();
+		List<TermId> allTerms = hpoOntology.getTerms().stream().map(Term::id)
+				.filter(x -> x.getPrefix().equals("HP")).distinct().toList();
 		final Map<TermId, String> termToCategory = new HashMap<>();
 		hpoCatMap.addAnnotatedTerms(allTerms, hpoOntology);
 		hpoCatMap.getActiveCategoryList().forEach(category -> {
@@ -252,9 +256,11 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		return frequency;
 	}
 
-	static Optional<TermId> findMondoEquivalent(TermId target, Collection<Term> diseases){
+	static Optional<Term> findMondoEquivalent(TermId target, Collection<Term> diseases){
 		return diseases.stream().filter(term ->
-				term.getXrefs().stream().map(Dbxref::getName).anyMatch(s -> s.equals(target.toString()))
-		).map(Term::id).findFirst();
+				term.getXrefs().stream().map(Dbxref::getName).map(TermId::of).anyMatch(s ->
+					s.getValue().equals(target.toString()) || s.getValue().equals(
+							TermId.of(AlternativePrefix.from(target.getPrefix()), s.getId()).getValue())
+		)).findFirst();
 	}
 }

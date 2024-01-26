@@ -29,16 +29,34 @@ public class DiseaseRepository {
 
 	/**
 	 * Find me a disease by query.
+	 * @param termId - the termId of the disease
+	 * @return List of diseases matching the query sorted by if the disease starts with.
+	 */
+	public Optional<Disease> findDiseaseById(TermId termId){
+		try (Transaction tx = driver.session().beginTransaction()) {
+			Result result = tx.run("MATCH (d: Disease) WHERE d.id = $q RETURN d", parameters("q", termId.getValue()));
+			if (result.hasNext()){
+				Value value = result.single().get("d");
+				return Optional.of(new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(),
+						value.get("mondoId").asString(), value.get("description").asString()));
+			}
+			return Optional.empty();
+		}
+	}
+
+	/**
+	 * Find me a disease by query.
 	 * @param query - the text to search for
 	 * @return List of diseases matching the query sorted by if the disease starts with.
 	 */
-	public Collection<Disease> findDisease(String query){
+	public Collection<Disease> findDiseases(String query) {
 		Collection<Disease> diseases = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
 			Result result = tx.run("MATCH (d: Disease) WHERE toLower(d.name) CONTAINS $q OR toLower(d.id) CONTAINS $q RETURN d", parameters("q", query.toLowerCase()));
 			while (result.hasNext()) {
 				Value value = result.next().get("d");
-				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(), value.get("mondoId").asString());
+				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(),
+						value.get("mondoId").asString(), value.get("description").asString());
 				diseases.add(disease);
 			}
 		}

@@ -10,7 +10,7 @@ trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 wget -P $1 --no-use-server-timestamps ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/mim2gene_medgen
 
 # HPO OBO
-wget -P $1 --no-use-server- http://purl.obolibrary.org/obo/hp/hp-base.json
+wget -P $1 --no-use-server- http://purl.obolibrary.org/obo/hp/hp-simple-non-classified.json
 
 # HPO OBO
 wget -P $1 --no-use-server- http://purl.obolibrary.org/obo/mondo/mondo-base.json
@@ -25,7 +25,7 @@ wget -P $1 --no-use-server-timestamps  http://www.orphadata.org/data/xml/en_prod
 wget -P $1 --no-use-server-timestamps  http://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/tsv/hgnc_complete_set.txt
 
 # PHENOTYPE HPOA
-wget https://github.com/obophenotype/human-phenotype-ontology/releases/latest/download/phenotype.hpoa -O $1/phenotype.hpoa
+wget https://github.com/obophenotype/human-phenotype-ontology/releases/latest/download/phenotype.hpoa -O $1phenotype.hpoa
 
 # EXIT
 exit 0;

@@ -11,8 +11,8 @@ import java.util.List;
 public class TestData {
 	public static List<Disease> diseases(){
 		return List.of(
-				new Disease(TermId.of("MONDO:099233"),"Really bad one", ""),
-				new Disease(TermId.of("DECIPHER:434444"),"Kinda bad one", "")
+				new Disease(TermId.of("MONDO:099233"),"Really bad one", "", ""),
+				new Disease(TermId.of("DECIPHER:434444"),"Kinda bad one", "", "")
 		);
 	}
 

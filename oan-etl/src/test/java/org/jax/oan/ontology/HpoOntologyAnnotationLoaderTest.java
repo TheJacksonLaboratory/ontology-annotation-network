@@ -154,15 +154,14 @@ class HpoOntologyAnnotationLoaderTest {
 
 	@Test
 	void findMondoEquivalent(){
-		TermId target = TermId.of("OMIM:619340");
-		Collection<Term> diseases = List.of(
-				Term.builder(target).xrefs(
-						List.of(
-								new Dbxref("OMIM:619340", "", null)
-						)
-				).name("Bad Disease 1").build()
-		);
+		TermId targetId = TermId.of("OMIM:619340");
+		Term target = Term.builder(targetId).xrefs(
+				List.of(
+						new Dbxref("OMIM:619340", "", null)
+				)
+		).name("Bad Disease 1").build();
+		Collection<Term> diseases = List.of(target);
 
-		assertEquals(target, HpoOntologyAnnotationLoader.findMondoEquivalent(target,diseases).orElse(null));
+		assertEquals(target, HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, diseases).orElse(null));
 	}
 }

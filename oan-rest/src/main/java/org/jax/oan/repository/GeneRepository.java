@@ -75,7 +75,8 @@ public class GeneRepository {
 			Result result = tx.run("MATCH (d: Disease)-[:EXPRESSES]->(g: Gene {id: $id}) RETURN d", parameters("id", termId.getValue()));
 			while (result.hasNext()) {
 				Value value = result.next().get("d");
-				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(), value.get("mondoId").asString());
+				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(),
+						value.get("mondoId").asString(), null);
 				diseases.add(disease);
 			}
 		}

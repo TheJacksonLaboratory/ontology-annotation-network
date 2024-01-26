@@ -11,6 +11,7 @@ import io.micronaut.serde.annotation.SerdeImport;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jax.oan.core.*;
+import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
 import org.jax.oan.service.*;
 import org.monarchinitiative.phenol.base.PhenolRuntimeException;
@@ -62,6 +63,8 @@ public class AnnotationController {
 			};
 		} catch(PhenolRuntimeException e){
 			throw new HttpStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+		} catch (OntologyAnnotationNetworkException e){
+			throw new HttpStatusException(HttpStatus.NOT_FOUND, e.getMessage());
 		}
 	}
 

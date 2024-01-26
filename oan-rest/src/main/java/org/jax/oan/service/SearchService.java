@@ -34,7 +34,7 @@ public class SearchService {
 
 	public SearchDto searchDisease(String query, int page, int limit){
 		page = page * limit;
-		Collection<Disease> diseases = this.diseaseRepository.findDisease(query);
+		Collection<Disease> diseases = this.diseaseRepository.findDiseases(query);
 		if (limit == -1){
 			return new SearchDto(diseases,  diseases.size());
 		} else {

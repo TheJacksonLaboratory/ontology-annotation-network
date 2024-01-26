@@ -6,7 +6,9 @@ import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.restassured.specification.RequestSpecification;
 import jakarta.inject.Inject;
+import org.jax.oan.TestData;
 import org.jax.oan.core.*;
+import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.service.DiseaseService;
 import org.jax.oan.service.DownloadService;
 import org.jax.oan.service.GeneService;
@@ -44,9 +46,9 @@ class AnnotationControllerTest {
 	private DownloadService downloadService;
 
 	@Test
-	void positive_by_disease(RequestSpecification spec) {
+	void positive_by_disease(RequestSpecification spec) throws OntologyAnnotationNetworkException {
 		when(diseaseService.findAll(TermId.of("OMIM:039293")))
-				.thenReturn(new DiseaseAnnotationDto(Map.of("limbs", phenotypes()), genes()));
+				.thenReturn(new DiseaseAnnotationDto(TestData.diseases().get(0), Map.of("limbs", phenotypes()), genes()));
 		spec.when().get("/api/network/annotation/OMIM:039293").then()
 				.statusCode(200).body("genes.id",
 						hasItems("NCBIGene:00093", "NCBIGene:02002"));

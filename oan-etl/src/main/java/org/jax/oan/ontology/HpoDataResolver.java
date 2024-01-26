@@ -46,7 +46,7 @@ public class HpoDataResolver {
 	}
 
 	public Path hpJson(){
-		return dataDirectory.resolve("hp-base.json");
+		return dataDirectory.resolve("hp-simple-non-classified.json");
 	}
 
 	public Path hgncCompleteSet() {

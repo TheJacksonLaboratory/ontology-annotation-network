@@ -35,7 +35,7 @@ public class PhenotypeRepository {
 			while (result.hasNext()) {
 				Value value = result.next().get("d");
 				Disease disease = new Disease(TermId.of(value.get("id").asString()),
-						value.get("name").asString(), value.get("mondoId").asString());
+						value.get("name").asString(), value.get("mondoId").asString(), null);
 				diseases.add(disease);
 			}
 		}

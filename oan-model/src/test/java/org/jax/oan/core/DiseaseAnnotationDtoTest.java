@@ -16,7 +16,8 @@ class DiseaseAnnotationDtoTest {
 	@ParameterizedTest
 	@MethodSource
 	void create(Map<String, List<Phenotype>> phenotypeByCategory, List<Gene> genes){
-		DiseaseAnnotationDto dto = new DiseaseAnnotationDto(phenotypeByCategory, genes);
+		Disease disease = new Disease(TermId.of("OMIM:029392"), "Zebra Disease","MONDO:029392", "A very bad one.");
+		DiseaseAnnotationDto dto = new DiseaseAnnotationDto(disease, phenotypeByCategory, genes);
 		assertEquals(dto.categories().keySet(), phenotypeByCategory.keySet());
 		assertEquals(dto.categories().values(), phenotypeByCategory.values());
 		assertEquals(dto.genes(), genes);
@@ -24,7 +25,8 @@ class DiseaseAnnotationDtoTest {
 
 	private static Stream<Arguments> create() {
 		return Stream.of(
-				Arguments.of(Map.of("inheritance", List.of(new Phenotype(TermId.of("HP:099232"), "Abnormality", "inheritance", null))),
+				Arguments.of(Map.of("inheritance",
+						List.of(new Phenotype(TermId.of("HP:099232"), "Abnormality", "inheritance", null))),
 						List.of(new Gene(TermId.of("NCBIGene:02932"), "TX4"), new Gene(TermId.of("NCBIGene:44444"), "GN1")))
 		);
 	}
