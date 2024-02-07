@@ -1,6 +1,7 @@
 package org.jax.oan.repository;
 
 import jakarta.inject.Singleton;
+import org.jax.oan.core.Disease;
 import org.jax.oan.core.Gene;
 import org.jax.oan.core.Phenotype;
 import org.jax.oan.core.PhenotypeMetadata;
@@ -11,10 +12,7 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.Value;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -28,6 +26,43 @@ public class DiseaseRepository {
 		this.driver = driver;
 	}
 
+
+	/**
+	 * Find me a disease by query.
+	 * @param termId - the termId of the disease
+	 * @return List of diseases matching the query sorted by if the disease starts with.
+	 */
+	public Optional<Disease> findDiseaseById(TermId termId){
+		try (Transaction tx = driver.session().beginTransaction()) {
+			Result result = tx.run("MATCH (d: Disease) WHERE d.id = $q RETURN d", parameters("q", termId.getValue()));
+			if (result.hasNext()){
+				Value value = result.single().get("d");
+				return Optional.of(new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(),
+						value.get("mondoId").asString(), value.get("description").asString()));
+			}
+			return Optional.empty();
+		}
+	}
+
+	/**
+	 * Find me a disease by query.
+	 * @param query - the text to search for
+	 * @return List of diseases matching the query sorted by if the disease starts with.
+	 */
+	public Collection<Disease> findDiseases(String query) {
+		Collection<Disease> diseases = new ArrayList<>();
+		try (Transaction tx = driver.session().beginTransaction()) {
+			Result result = tx.run("MATCH (d: Disease) WHERE toLower(d.name) CONTAINS $q OR toLower(d.id) CONTAINS $q RETURN d", parameters("q", query.toLowerCase()));
+			while (result.hasNext()) {
+				Value value = result.next().get("d");
+				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(),
+						value.get("mondoId").asString(), value.get("description").asString());
+				diseases.add(disease);
+			}
+		}
+		return diseases.stream().sorted(Comparator.comparing((Disease d) -> !d.getName().toLowerCase()
+				.startsWith(query.toLowerCase()))).toList();
+	}
 
 	/**
 	 * Give me all the genes that are expressed in this disease.

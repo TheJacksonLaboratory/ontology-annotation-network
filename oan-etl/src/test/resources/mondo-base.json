@@ -1,0 +1,70 @@
+{
+  "graphs" : [ {
+    "nodes" : [ {
+      "id" : "http://purl.obolibrary.org/obo/MONDO_0000001",
+      "meta" : {
+        "definition" : {
+          "val" : "Definition for MONDO:0000001.",
+          "xrefs" : []
+        },
+        "xrefs" : [{
+          "val" : "OMIM:619340"
+        }],
+        "basicPropertyValues" : [ {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#created_by",
+          "val" : "mike"
+        }, {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#creation_date",
+          "val" : "2012-04-22T04:38:20Z"
+        }, {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#hasOBONamespace",
+          "val" : "disease_ontology"
+        } ]
+      },
+      "type" : "CLASS",
+      "lbl" : "Disease Term 1"
+    }, {
+      "id" : "http://purl.obolibrary.org/obo/MONDO_0000002",
+      "meta" : {
+        "definition" : {
+          "val" : "Definition for MONDO_0000002",
+          "xrefs" : []
+        },
+        "xrefs" : [],
+        "synonyms" : [ {
+          "pred" : "hasExactSynonym",
+          "val" : "Synonym of fake term 1",
+          "xrefs" : [ "ORCID:0000-0001-5208-3432" ]
+        } ],
+        "basicPropertyValues" : [ {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#hasOBONamespace",
+          "val" : "disease_ontology"
+        }, {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#created_by",
+          "val" : "doelkens"
+        }, {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#creation_date",
+          "val" : "2009-01-14T04:33:41Z"
+        } ]
+      },
+      "type" : "CLASS",
+      "lbl" : "Fake disease 2"
+    }],
+    "edges" : [  {
+      "sub" : "http://purl.obolibrary.org/obo/MONDO_0000002",
+      "pred" : "is_a",
+      "obj" : "http://purl.obolibrary.org/obo/MONDO_0000001"
+    }],
+    "id" : "http://purl.obolibrary.org/obo/mondo.json",
+    "meta" : {
+      "subsets" : [ ],
+      "xrefs" : [ ],
+      "basicPropertyValues" : [],
+      "version" : "http://purl.obolibrary.org/obo/mondo/releases/2019-09-06"
+    },
+    "equivalentNodesSets" : [ ],
+    "logicalDefinitionAxioms" : [ ],
+    "domainRangeAxioms" : [ ],
+    "propertyChainAxioms" : [ ]
+  }]
+}

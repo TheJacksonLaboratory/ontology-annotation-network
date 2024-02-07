@@ -2,6 +2,7 @@ package org.jax.oan.repository;
 
 import jakarta.inject.Singleton;
 import org.jax.oan.core.Disease;
+import org.jax.oan.core.Gene;
 import org.jax.oan.core.Phenotype;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 import org.neo4j.driver.Driver;
@@ -11,6 +12,7 @@ import org.neo4j.driver.Value;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.neo4j.driver.Values.parameters;
@@ -22,6 +24,26 @@ public class GeneRepository {
 
 	public GeneRepository(Driver driver) {
 		this.driver = driver;
+	}
+
+
+	/**
+	 * Find me a gene by query.
+	 * @param query - the text to search for
+	 * @return List of genes matching the query sorted by if the gene starts with query.
+	 */
+	public Collection<Gene> findGenes(String query){
+		Collection<Gene> genes = new ArrayList<>();
+		try (Transaction tx = driver.session().beginTransaction()) {
+				Result result = tx.run("MATCH (g: Gene) WHERE g.name CONTAINS $q OR g.id CONTAINS $q RETURN g", parameters("q", query));
+				while (result.hasNext()) {
+					Value value = result.next().get("g");
+					Gene gene = new Gene(TermId.of(value.get("id").asString()), value.get("name").asString());
+					genes.add(gene);
+				}
+			}
+		return genes.stream().sorted(Comparator.comparing((Gene g) -> !g.getName().toLowerCase()
+				.startsWith(query.toLowerCase()))).toList();
 	}
 
 	/**
@@ -53,7 +75,8 @@ public class GeneRepository {
 			Result result = tx.run("MATCH (d: Disease)-[:EXPRESSES]->(g: Gene {id: $id}) RETURN d", parameters("id", termId.getValue()));
 			while (result.hasNext()) {
 				Value value = result.next().get("d");
-				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString());
+				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(),
+						value.get("mondoId").asString(), null);
 				diseases.add(disease);
 			}
 		}

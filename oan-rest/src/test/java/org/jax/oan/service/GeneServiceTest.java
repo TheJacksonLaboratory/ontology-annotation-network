@@ -46,8 +46,8 @@ class GeneServiceTest {
 	private static Stream<Arguments> test_find_all(){
 		return Stream.of(
 				Arguments.of(TermId.of("NCBIGene:34"), List.of(
-						new Disease(TermId.of("MONDO:099233"),"Really bad one"),
-						new Disease(TermId.of("DECIPHER:434444"),"Kinda bad one")
+						new Disease(TermId.of("MONDO:099233"),"Really bad one", "", ""),
+						new Disease(TermId.of("DECIPHER:434444"),"Kinda bad one", "MODNO:000001", "")
 				), List.of(
 						new Phenotype(TermId.of("HP:099233"),"Long legs", null, null)
 				)),

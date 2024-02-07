@@ -195,12 +195,12 @@
       }, {
         "pred" : "http://www.w3.org/2000/01/rdf-schema#comment",
         "val" : "Please see license of HPO at http://www.human-phenotype-ontology.org"
-      } ],
+      }],
       "version" : "http://purl.obolibrary.org/obo/hp/releases/2019-09-06"
     },
     "equivalentNodesSets" : [ ],
     "logicalDefinitionAxioms" : [ ],
     "domainRangeAxioms" : [ ],
     "propertyChainAxioms" : [ ]
-  } ]
+  }]
 }

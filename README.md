@@ -13,6 +13,11 @@ Micronaut 4.1.2
 
 ### Modules
 
+Pre-package modules using
+```
+    ./mvnw clean package -pl <module> -am
+```
+
 #### OAN-ETL
     A ontologyModule to load our graph data which includes phenotypes, diseases, genes, assays. There
     are multiple loaders for the different ontologies that are supported
@@ -20,13 +25,13 @@ Micronaut 4.1.2
 Running
 
 ```
-    ./gradlew oan-etl:run
+    java -jar oan-etl/target/<jar>
 ```
 
 Testing
 
 ```
-    ./gradlew oan-etl:test
+    ./mvnw clean test -pl oan-etl -am
 ```
 
 #### OAN-REST
@@ -36,11 +41,11 @@ Testing
 Running
 
 ```
-    ./gradlew oan-rest:run
+     java -jar oan-rest/target/<jar>
 ```
 
 Testing
 
 ```
-    ./gradlew oan-rest:test
+     ./mvnw clean test -pl oan-rest -am
 ```
