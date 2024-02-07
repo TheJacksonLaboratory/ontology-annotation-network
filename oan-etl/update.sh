@@ -1,10 +1,6 @@
 #!/bin/bash
 # Exit if command fails
 set -e
-# keep track of the last executed command
-trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
-# echo an error message before exiting
-trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 
 # OMIM 2 GENE
 wget -P $1 --no-use-server-timestamps ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/mim2gene_medgen
