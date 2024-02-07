@@ -6,10 +6,10 @@ set -e
 wget -P $1 --no-use-server-timestamps ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/mim2gene_medgen
 
 # HPO OBO
-wget -P $1 --no-use-server- http://purl.obolibrary.org/obo/hp/hp-simple-non-classified.json
+wget -P $1 --no-use-server-timestamps http://purl.obolibrary.org/obo/hp/hp-simple-non-classified.json
 
 # HPO OBO
-wget -P $1 --no-use-server- http://purl.obolibrary.org/obo/mondo/mondo-base.json
+wget -P $1 --no-use-server-timestamps http://purl.obolibrary.org/obo/mondo/mondo-base.json
 
 # MAXO OBO
 wget -P $1 --no-use-server-timestamps https://raw.githubusercontent.com/monarch-initiative/MAxO/master/maxo.json
