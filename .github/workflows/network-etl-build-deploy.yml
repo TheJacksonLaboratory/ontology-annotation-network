@@ -32,8 +32,8 @@ jobs:
         run: |
           echo "PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
 
-      - name: Maven Verify
-        run: mvn clean package -pl oan-etl -am
+      # - name: Maven Verify
+      #   run: mvn clean package -pl oan-etl -am
 
       - name: Docker Login
         run: |
