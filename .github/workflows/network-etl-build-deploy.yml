@@ -39,40 +39,41 @@ jobs:
         run: |
           gcloud auth configure-docker "${GCLOUD_GCR}"
 
-      - name: Start our builder database container
-        run: |
-          docker pull neo4j:community-bullseye
-          docker run -d --name=builder-neo4j  -p7474:7474 -p7687:7687 -v ./neo4j/data:/data  --env NEO4J_AUTH=neo4j/password neo4j:community-bullseye
-      - name: Fetch our data
-        run: sh oan-etl/update.sh oan-etl/data/
+      # - name: Start our builder database container
+      #   run: |
+      #     docker pull neo4j:community-bullseye
+      #     docker run -d --name=builder-neo4j  -p7474:7474 -p7687:7687 -v ./neo4j/data:/data  --env NEO4J_AUTH=neo4j/password neo4j:community-bullseye
+      # - name: Fetch our data
+      #   run: sh oan-etl/update.sh oan-etl/data/
 
-      - name: Load our neo4j data
-        run: |
-          java -jar oan-etl/target/oan-etl-${PROJECT_VERSION}.jar -d=oan-etl/data
-          docker stop builder-neo4j
+      # - name: Load our neo4j data
+      #   run: |
+      #     java -jar oan-etl/target/oan-etl-${PROJECT_VERSION}.jar -d=oan-etl/data
+      #     docker stop builder-neo4j
 
       - name: Build And Push Docker Image
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
         run: |
+          echo "${GCLOUD_GCR}/${GCLOUD_REGISTRY_PROJECT_ID}/${GCLOUD_REGISTRY_IMAGE_ENV}/${GCLOUD_REGISTRY_IMAGE_PROJECT}/$SERVICE_NAME:$PROJECT_VERSION" | sed -e 's#//#/#' -e 's#^/##'`
           echo "DOCKER_IMAGE=${GCLOUD_GCR}/${GCLOUD_REGISTRY_PROJECT_ID}/${GCLOUD_REGISTRY_IMAGE_ENV}/${GCLOUD_REGISTRY_IMAGE_PROJECT}/$SERVICE_NAME:$PROJECT_VERSION" >> $GITHUB_ENV
-          docker build . --tag="${DOCKER_IMAGE}"
-          docker push "${DOCKER_IMAGE}"
+          # docker build . --tag="${DOCKER_IMAGE}"
+          # docker push "${DOCKER_IMAGE}" 
 
-      - name: Tag Artifact Registry
-        run: |
-          gcloud artifacts docker tags add "${DOCKER_IMAGE}" "${GCLOUD_GCR}/${GCLOUD_REGISTRY_PROJECT_ID}/${GCLOUD_REGISTRY_IMAGE_ENV}/${GCLOUD_REGISTRY_IMAGE_PROJECT}/$SERVICE_NAME:latest"
+      # - name: Tag Artifact Registry
+      #   run: |
+      #     gcloud artifacts docker tags add "${DOCKER_IMAGE}" "${GCLOUD_GCR}/${GCLOUD_REGISTRY_PROJECT_ID}/${GCLOUD_REGISTRY_IMAGE_ENV}/${GCLOUD_REGISTRY_IMAGE_PROJECT}/$SERVICE_NAME:latest"
 
-      - name: Deploy Cloud Run
-        run: |
-          DOCKER_IMAGE_REPOSITORY=$(docker images --format "{{.Repository}}" | grep ontology-annotation-network-etl)
-          DOCKER_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" "${DOCKER_IMAGE_REPOSITORY}" )
+      # - name: Deploy Cloud Run
+      #   run: |
+      #     DOCKER_IMAGE_REPOSITORY=$(docker images --format "{{.Repository}}" | grep ontology-annotation-network-etl)
+      #     DOCKER_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" "${DOCKER_IMAGE_REPOSITORY}" )
 
-          gcloud run deploy $SERVICE_NAME --quiet \
-            --image "${DOCKER_IMAGE}" --project "${GCLOUD_PROJECT_ID}" \
-            --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
-            --memory 2Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
+      #     gcloud run deploy $SERVICE_NAME --quiet \
+      #       --image "${DOCKER_IMAGE}" --project "${GCLOUD_PROJECT_ID}" \
+      #       --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
+      #       --memory 2Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
           
-          echo "Invoke endpoint:"
-          gcloud run services list --platform managed --format json | jq -r \
-            '.[] | select(.metadata.name == "google-cloud-run-maven-test") | .status.address.url'
+      #     echo "Invoke endpoint:"
+      #     gcloud run services list --platform managed --format json | jq -r \
+      #       '.[] | select(.metadata.name == "google-cloud-run-maven-test") | .status.address.url'
