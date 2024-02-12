@@ -9,8 +9,7 @@ env:
   GCLOUD_REGISTRY_IMAGE_ENV: docker
   GCLOUD_REGISTRY_IMAGE_PROJECT: ontology
   SERVICE_NAME: ontology-annotation-network
-  DOCKER_IMAGE: $GCLOUD_GCR/$GCLOUD_REGISTRY_PROJECT_ID/$GCLOUD_REGISTRY_IMAGE_ENV}/$GCLOUD_REGISTRY_IMAGE_PROJECT/$SERVICE_NAME
-
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,6 +31,10 @@ jobs:
       - name: Get project version
         run: |
           echo "PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+
+      - name: Set our docker image name
+        run: |
+          echo "DOCKER_IMAGE=$GCLOUD_GCR/$GCLOUD_REGISTRY_PROJECT_ID/$GCLOUD_REGISTRY_IMAGE_ENV}/$GCLOUD_REGISTRY_IMAGE_PROJECT/$SERVICE_NAME" >> $GITHUB_ENV
 
       # - name: Maven Verify
       #   run: mvn clean package -pl oan-etl -am
