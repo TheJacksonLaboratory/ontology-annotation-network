@@ -69,11 +69,11 @@ jobs:
 
       - name: Deploy Cloud Run
         run: |
-          DOCKER_IMAGE_REPOSITORY=$(docker images --format "{{.Repository}}" | grep $SERVICE_NAME)
-          DOCKER_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" "${DOCKER_IMAGE_REPOSITORY}" )
+          DOCKER_IMAGE_REPOSITORY=$(docker images --format "{{.Repository}}" | grep ontology-annotation-network)
+          DOCK_IMAGE_DEPLOY=$(docker images --format "{{.Repository}}:{{.Tag}}" "${DOCKER_IMAGE_REPOSITORY}" )
 
           gcloud run deploy $SERVICE_NAME --quiet \
-            --image "${DOCKER_IMAGE}:${PROJECT_VERSION}" --project "${GCLOUD_PROJECT_ID}" \
+            --image "${DOCK_IMAGE_DEPLOY}" --project "${GCLOUD_PROJECT_ID}" \
             --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
             --memory 2Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
           
