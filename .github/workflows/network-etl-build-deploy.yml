@@ -69,7 +69,7 @@ jobs:
 
       - name: Deploy Cloud Run
         run: |
-          DOCKER_IMAGE_REPOSITORY=$(docker images --format "{{.Repository}}" | grep ontology-annotation-network-etl)
+          DOCKER_IMAGE_REPOSITORY=$(docker images --format "{{.Repository}}" | grep $SERVICE_NAME)
           DOCKER_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" "${DOCKER_IMAGE_REPOSITORY}" )
 
           gcloud run deploy $SERVICE_NAME --quiet \
