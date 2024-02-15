@@ -1,6 +1,7 @@
 # Set up running image
 FROM neo4j:community-bullseye
 
+RUN ls
 RUN neo4j-admin dbms set-initial-password password
 EXPOSE 7474 7687
 
