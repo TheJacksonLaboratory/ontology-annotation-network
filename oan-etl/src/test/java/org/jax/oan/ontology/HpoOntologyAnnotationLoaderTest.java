@@ -26,7 +26,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@MicronautTest
+@MicronautTest(environments = "test")
 class HpoOntologyAnnotationLoaderTest {
 
 	final HpoOntologyAnnotationLoader graphLoader;

@@ -18,8 +18,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@MicronautTest(environments = "test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@MicronautTest
 class DiseaseRepositoryTest {
 
 	@Inject
