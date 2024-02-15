@@ -1,11 +1,6 @@
-name: Deploy Data
+name: Deploy Neo4j Container
 on:
   workflow_dispatch:
-    inputs:
-      ontology:
-        description: 'Should '
-        required: true
-        type: string
 env:
   GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
   GCLOUD_REGION: us-east1
@@ -45,23 +40,24 @@ jobs:
         run: |
           gcloud auth configure-docker "${GCLOUD_GCR}"
 
-      - name: Maven Verify
-        run: mvn package -pl oan-etl -am
-
-      - name: Start our builder database container
+      - name: Build And Push Docker Image
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: true
         run: |
-          docker pull neo4j:community-bullseye
-          docker run -d --name=builder-neo4j  -p7474:7474 -p7687:7687 -v ./neo4j/data:/data  --env NEO4J_AUTH=neo4j/password neo4j:community-bullseye
+          echo "$DOCKER_IMAGE"
+          docker build . --tag="${DOCKER_IMAGE}:${PROJECT_VERSION}"
+          docker push "${DOCKER_IMAGE}:${PROJECT_VERSION}" 
 
-      - name: Fetch our data
-        run: sh oan-etl/update.sh oan-etl/data/
-
-      - name: Load our neo4j data
+      - name: Tag Artifact Registry
         run: |
-          java -jar oan-etl/target/oan-etl-${PROJECT_VERSION}.jar -d=oan-etl/data
-          docker stop builder-neo4j
+          gcloud artifacts docker tags add "${DOCKER_IMAGE}:${PROJECT_VERSION}" "${DOCKER_IMAGE}:latest"
 
-      - name: Copy data to gcs
+      - name: Deploy Cloud Run
         run: |
-          gsutil cp -r ./neo4j/data/ gs://jax-robinson-ontology-annotation-network-data/stage/
-  
+          DOCKER_IMAGE_REPOSITORY=$(docker images --format "{{.Repository}}" | grep ontology-annotation-network)
+          DOCK_IMAGE_DEPLOY=$(docker images --format "{{.Repository}}:{{.Tag}}" "${DOCKER_IMAGE_REPOSITORY}" )
+
+          gcloud run deploy $SERVICE_NAME --quiet \
+            --image "${DOCK_IMAGE_DEPLOY}" --project "${GCLOUD_PROJECT_ID}" \
+            --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
+            --memory 2Gi --cpu 2 --min-instances 1 --max-instances 5 --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
