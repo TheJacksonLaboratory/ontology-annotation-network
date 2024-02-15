@@ -1,6 +1,11 @@
 name: Deploy Graph Container
 on:
   workflow_dispatch:
+    inputs:
+      ontology:
+        description: 'Should '
+        required: true
+        type: string
 env:
   GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
   GCLOUD_REGION: us-east1
@@ -36,17 +41,18 @@ jobs:
         run: |
           echo "DOCKER_IMAGE=$GCLOUD_GCR/$GCLOUD_REGISTRY_PROJECT_ID/$GCLOUD_REGISTRY_IMAGE_ENV/$GCLOUD_REGISTRY_IMAGE_PROJECT/$SERVICE_NAME" >> $GITHUB_ENV
 
-      - name: Maven Verify
-        run: mvn package -pl oan-etl -am
-
       - name: Docker Login
         run: |
           gcloud auth configure-docker "${GCLOUD_GCR}"
+
+      - name: Maven Verify
+        run: mvn package -pl oan-etl -am
 
       - name: Start our builder database container
         run: |
           docker pull neo4j:community-bullseye
           docker run -d --name=builder-neo4j  -p7474:7474 -p7687:7687 -v ./neo4j/data:/data  --env NEO4J_AUTH=neo4j/password neo4j:community-bullseye
+
       - name: Fetch our data
         run: sh oan-etl/update.sh oan-etl/data/
 
@@ -55,24 +61,7 @@ jobs:
           java -jar oan-etl/target/oan-etl-${PROJECT_VERSION}.jar -d=oan-etl/data
           docker stop builder-neo4j
 
-      - name: Build And Push Docker Image
-        env:
-          TESTCONTAINERS_RYUK_DISABLED: true
+      - name: Copy data to gcs
         run: |
-          echo "$DOCKER_IMAGE"
-          docker build . --tag="${DOCKER_IMAGE}:${PROJECT_VERSION}"
-          docker push "${DOCKER_IMAGE}:${PROJECT_VERSION}" 
-
-      - name: Tag Artifact Registry
-        run: |
-          gcloud artifacts docker tags add "${DOCKER_IMAGE}:${PROJECT_VERSION}" "${DOCKER_IMAGE}:latest"
-
-      - name: Deploy Cloud Run
-        run: |
-          DOCKER_IMAGE_REPOSITORY=$(docker images --format "{{.Repository}}" | grep ontology-annotation-network)
-          DOCK_IMAGE_DEPLOY=$(docker images --format "{{.Repository}}:{{.Tag}}" "${DOCKER_IMAGE_REPOSITORY}" )
-
-          gcloud run deploy $SERVICE_NAME --quiet \
-            --image "${DOCK_IMAGE_DEPLOY}" --project "${GCLOUD_PROJECT_ID}" \
-            --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
-            --memory 2Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
+          gsutil cp -r ./neo4j/data/ gs://jax-robinson-ontology-annotation-network-data/stage/
+  
