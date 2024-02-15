@@ -1,4 +1,4 @@
-name: Deploy Neo4j Container
+name: Deploy Ontology Annotation Network Rest
 on:
   workflow_dispatch:
 env:
@@ -8,7 +8,7 @@ env:
   GCLOUD_REGISTRY_PROJECT_ID: ${{ secrets.GCLOUD_REGISTRY_PROJECT_ID }}
   GCLOUD_REGISTRY_IMAGE_ENV: docker
   GCLOUD_REGISTRY_IMAGE_PROJECT: ontology
-  SERVICE_NAME: ontology-annotation-network
+  SERVICE_NAME: ontology-annotation-network-rest
   
 jobs:
   build:
@@ -36,6 +36,9 @@ jobs:
         run: |
           echo "DOCKER_IMAGE=$GCLOUD_GCR/$GCLOUD_REGISTRY_PROJECT_ID/$GCLOUD_REGISTRY_IMAGE_ENV/$GCLOUD_REGISTRY_IMAGE_PROJECT/$SERVICE_NAME" >> $GITHUB_ENV
 
+      - name: Maven Verify
+        run: mvn package -pl oan-rest -am
+
       - name: Docker Login
         run: |
           gcloud auth configure-docker "${GCLOUD_GCR}"
@@ -45,7 +48,8 @@ jobs:
           TESTCONTAINERS_RYUK_DISABLED: true
         run: |
           echo "$DOCKER_IMAGE"
-          docker build . --tag="${DOCKER_IMAGE}:${PROJECT_VERSION}"
+          cd oan-rest/
+          docker build . --build-arg="VERSION_ARG=${PROJECT_VERSION}" --build-arg="MICRONAUT_ENV_ARG=production" --tag="${DOCKER_IMAGE}:${PROJECT_VERSION}"
           docker push "${DOCKER_IMAGE}:${PROJECT_VERSION}" 
 
       - name: Tag Artifact Registry
@@ -60,8 +64,4 @@ jobs:
           gcloud run deploy $SERVICE_NAME --quiet \
             --image "${DOCK_IMAGE_DEPLOY}" --project "${GCLOUD_PROJECT_ID}" \
             --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
-            --memory 2Gi --cpu 2 --min-instances 1 --max-instances 5 --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
-
-
-          gcloud beta run deploy ontology-annotation-network --image us-docker.pkg.dev/jax-cs-registry/docker/ontology/ontology-annotation-network:1.0-SNAPSHOT --project jax-robinson-hpo-01 --region us-east1 --platform managed --allow-unauthenticated --format json \
-            --memory 2Gi --cpu 2 --min-instances 1 --max-instances 5 --ingress internal-and-cloud-load-balancing --execution-environment gen2 --add-volume=name=dbdata,type=cloud-storage,bucket=jax-robinson-ontology-annotation-network-data --add-volume-mount=volume=dbdata,mount-path=/data
+            --memory 2Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
