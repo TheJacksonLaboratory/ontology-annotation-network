@@ -63,9 +63,9 @@ jobs:
 
       - name: Migrate data to GCS w/backup
         run: |
-          gsutil rm -r gs://jax-robinson-ontology-annotation-network-data/backup/
+          gsutil -m rm -r gs://jax-robinson-ontology-annotation-network-data/backup/
           gsutil -m cp -r gs://jax-robinson-ontology-annotation-network-data/data/* gs://jax-robinson-ontology-annotation-network-data/backup/
-          gsutil rm -r gs://jax-robinson-ontology-annotation-network-data/data/
-          gsutil cp -r ./neo4j/data/* gs://jax-robinson-ontology-annotation-network-data/data/
+          gsutil -m rm -r gs://jax-robinson-ontology-annotation-network-data/data/
+          gsutil -m cp -r ./neo4j/data/* gs://jax-robinson-ontology-annotation-network-data/data/
   
       
