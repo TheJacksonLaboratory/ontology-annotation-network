@@ -36,7 +36,7 @@ jobs:
         run: |
           echo "DOCKER_IMAGE=$GCLOUD_GCR/$GCLOUD_REGISTRY_PROJECT_ID/$GCLOUD_REGISTRY_IMAGE_ENV/$GCLOUD_REGISTRY_IMAGE_PROJECT/$SERVICE_NAME" >> $GITHUB_ENV
 
-      - name: Maven Verify
+      - name: Maven Package Rest Only
         run: mvn package -pl oan-rest -am
 
       - name: Docker Login
