@@ -25,10 +25,8 @@
     <junit-jupiter.version>5.10.0</junit-jupiter.version>
     <mockito.version>5.3.1</mockito.version>
     <javars.version>2.1.1</javars.version>
-    <neo4j.version>5.13.0</neo4j.version>
-    <micronaut-neo4j.version>6.2.0</micronaut-neo4j.version>
-    <micronaut-serde.version>2.2.0</micronaut-serde.version>
-    <swagger.version>2.2.19</swagger.version>
+    <neo4j.version>5.13.0</neo4j.version>q
+    <swagger.version>2.2.20</swagger.version>
     <picocli.version>4.7.5</picocli.version>
     <logback.version>1.4.11</logback.version>
   </properties>
@@ -51,9 +49,11 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>io.micronaut.picocli</groupId>
-        <artifactId>micronaut-picocli</artifactId>
-        <version>5.0.1</version>
+        <groupId>io.micronaut.platform</groupId>
+        <artifactId>micronaut-platform</artifactId>
+        <version>${micronaut.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.monarchinitiative.phenol</groupId>
@@ -89,33 +89,6 @@
         </exclusions>
       </dependency>
       <dependency>
-        <groupId>io.micronaut</groupId>
-        <artifactId>micronaut-inject-java</artifactId>
-        <version>${micronaut.version}</version>
-        <scope>compile</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.micronaut</groupId>
-        <artifactId>micronaut-runtime</artifactId>
-        <version>${micronaut.version}</version>
-        <scope>compile</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.micronaut.serde</groupId>
-        <artifactId>micronaut-serde-jackson</artifactId>
-        <version>${micronaut-serde.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.micronaut.serde</groupId>
-        <artifactId>micronaut-serde-processor</artifactId>
-        <version>${micronaut-serde.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.micronaut.neo4j</groupId>
-        <artifactId>micronaut-neo4j-bolt</artifactId>
-        <version>${micronaut-neo4j.version}</version>
-      </dependency>
-      <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-classic</artifactId>
         <version>1.4.8</version>
@@ -131,28 +104,10 @@
         <version>${picocli.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.micronaut.test</groupId>
-        <artifactId>micronaut-test-rest-assured</artifactId>
-        <version>${micronaut.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.micronaut.test</groupId>
-        <artifactId>micronaut-test-junit5</artifactId>
-        <version>${micronaut.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.micronaut</groupId>
-        <artifactId>micronaut-http-server-netty</artifactId>
-        <version>${micronaut.version}</version>
-        <scope>compile</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.micronaut</groupId>
-        <artifactId>micronaut-http-client</artifactId>
-        <version>${micronaut.version}</version>
-        <scope>test</scope>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>2.0</version>
+        <scope>runtime</scope>
       </dependency>
       <dependency>
         <groupId>org.neo4j.test</groupId>
@@ -221,23 +176,21 @@
   </pluginRepositories>
 
   <build>
-        <plugins>
-          <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.11</version>
-            <executions>
-              <execution>
-                <id>prepare-agent</id>
-                <goals>
-                  <goal>prepare-agent</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-    </plugins>
     <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
       <plugins>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.11</version>
+          <executions>
+            <execution>
+              <id>prepare-agent</id>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
         <plugin>
           <groupId>io.micronaut.maven</groupId>
           <artifactId>micronaut-maven-plugin</artifactId>
@@ -261,19 +214,24 @@
 
             <annotationProcessorPaths combine.children="append">
               <path>
-                <groupId>io.micronaut.serde</groupId>
-                <artifactId>micronaut-serde-processor</artifactId>
-                <version>${micronaut-serde.version}</version>
-              </path>
-              <path>
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-inject-java</artifactId>
-                <version>${micronaut.version}</version>
+                <version>4.1.3</version>
               </path>
               <path>
                 <groupId>info.picocli</groupId>
                 <artifactId>picocli-codegen</artifactId>
                 <version>${picocli.version}</version>
+              </path>
+              <path>
+                <groupId>io.micronaut.openapi</groupId>
+                <artifactId>micronaut-openapi</artifactId>
+                <version>5.1.1</version>
+              </path>
+              <path>
+                <groupId>io.micronaut.serde</groupId>
+                <artifactId>micronaut-serde-processor</artifactId>
+                <version>2.2.4</version>
               </path>
             </annotationProcessorPaths>
           </configuration>

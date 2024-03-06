@@ -1,0 +1,7 @@
+api-prefix: /api/network
+neo4j:
+    embedded:
+        ephemeral: true
+    password: password
+    uri: bolt://localhost:7687
+    username: neo4j
