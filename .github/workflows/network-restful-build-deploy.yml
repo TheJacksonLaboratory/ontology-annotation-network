@@ -49,7 +49,7 @@ jobs:
         run: |
           echo "$DOCKER_IMAGE"
           cd oan-rest/
-          docker build . --build-arg="VERSION_ARG=${PROJECT_VERSION}" --build-arg="MICRONAUT_ENV_ARG=production" --tag="${DOCKER_IMAGE}:${PROJECT_VERSION}"
+          docker build . --build-arg="VERSION_ARG=${PROJECT_VERSION}" --build-arg="MICRONAUT_ENV_ARG=prod" --tag="${DOCKER_IMAGE}:${PROJECT_VERSION}"
           docker push "${DOCKER_IMAGE}:${PROJECT_VERSION}" 
 
       - name: Tag Artifact Registry

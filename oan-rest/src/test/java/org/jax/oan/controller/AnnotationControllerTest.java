@@ -36,6 +36,7 @@ class AnnotationControllerTest {
 
 	@Inject
 	private PhenotypeService phenotypeService;
+
 	@Inject
 	private GeneService geneService;
 
