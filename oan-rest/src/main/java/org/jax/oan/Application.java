@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.info.*;
 @OpenAPIDefinition(
     info = @Info(
             title = "ontology-annotation-network",
-            version = "1.0.1g"
+            version = "1.0.1-SNAPSHOT"
     )
 )
 public class Application {

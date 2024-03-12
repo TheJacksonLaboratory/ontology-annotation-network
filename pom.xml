@@ -7,7 +7,7 @@
   <groupId>org.jax.oan</groupId>
   <artifactId>ontology-annotation-network</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.1</version>
+  <version>1.0.1-SNAPSHOT</version>
 
   <name>ontology-annotation-network</name>
   <url>https://github.com/TheJacksonLaboratory/ontology-annotation-network</url>
