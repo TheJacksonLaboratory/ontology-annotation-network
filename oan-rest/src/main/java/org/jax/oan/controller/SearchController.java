@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.jax.oan.core.SearchDto;
 import org.jax.oan.service.SearchService;
 
-@Controller("${api-prefix}/search")
+@Controller("/search")
 @SerdeImport(SearchDto.class)
 public class SearchController {
 	private SearchService searchService;

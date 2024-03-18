@@ -17,7 +17,7 @@ import org.jax.oan.service.*;
 import org.monarchinitiative.phenol.base.PhenolRuntimeException;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
-@Controller("${api-prefix}/annotation")
+@Controller("/annotation")
 @SerdeImport(Disease.class)
 @SerdeImport(Gene.class)
 @SerdeImport(Phenotype.class)
