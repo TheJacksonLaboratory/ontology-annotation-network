@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.jax.oan</groupId>
         <artifactId>ontology-annotation-network</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>oan-rest</artifactId>
@@ -47,12 +47,21 @@
             <artifactId>micronaut-http-server-netty</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-management</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut.openapi</groupId>
+            <artifactId>micronaut-openapi-annotations</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.validation</groupId>
@@ -93,9 +102,8 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
+                <configuration combine.children="append">
                     <fork>true</fork>
                     <compilerArgs>
                         <arg>-Amicronaut.openapi.views.spec=swagger-ui.enabled=true,swagger-ui.theme=flattop,swagger-ui.js.url=/api/network/docs/res/,swagger-ui.theme.url=/api/network/docs/,swagger-ui.spec.url=/api/network/${project.parent.artifactId}-${project.version}.yml</arg>

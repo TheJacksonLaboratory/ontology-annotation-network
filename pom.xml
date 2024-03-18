@@ -7,7 +7,7 @@
   <groupId>org.jax.oan</groupId>
   <artifactId>ontology-annotation-network</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.0.2-SNAPSHOT</version>
 
   <name>ontology-annotation-network</name>
   <url>https://github.com/TheJacksonLaboratory/ontology-annotation-network</url>
@@ -209,10 +209,7 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.8.0</version>
           <configuration>
-            <!-- Uncomment to enable incremental compilation -->
-            <!-- <useIncrementalCompilation>false</useIncrementalCompilation> -->
-
-            <annotationProcessorPaths combine.children="append">
+            <annotationProcessorPaths>
               <path>
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-inject-java</artifactId>

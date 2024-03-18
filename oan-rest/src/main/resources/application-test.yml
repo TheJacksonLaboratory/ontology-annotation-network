@@ -1,4 +1,6 @@
-api-prefix: /api/network
+micronaut:
+    server:
+        context-path: /api/network
 neo4j:
     embedded:
         ephemeral: true
