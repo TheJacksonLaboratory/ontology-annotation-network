@@ -10,7 +10,8 @@ import org.monarchinitiative.phenol.annotations.formats.AnnotationReference;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoAssociationData;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoGeneAnnotation;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoOnset;
-import org.monarchinitiative.phenol.annotations.formats.hpo.category.HpoCategoryMap;
+import org.monarchinitiative.phenol.annotations.formats.hpo.category.HpoCategories;
+import org.monarchinitiative.phenol.annotations.formats.hpo.category.HpoCategoryLookup;
 import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataLoader;
@@ -32,6 +33,9 @@ import java.util.stream.Collectors;
 
 import static org.neo4j.driver.Values.parameters;
 
+/**
+ * This class loads all data related to HpoOntology. Connecting phenotypes, diseases and genes with metadata.
+ */
 public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	private final GraphDatabaseOperations graphDatabaseOperations;
 	private final GraphWriter graphWriter;
@@ -156,7 +160,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		logger.info("Connecting Phenotypes...");
 		ArrayList<Query> queries = new ArrayList<>(Collections.emptyList());
 			for (Term term : phenotypes.stream().distinct().toList()) {
-				for (TermId child : ontology.graph().getChildren(term.id(), false)) {
+				for (TermId child : ontology.graph().getChildren(term.id())) {
 					Query query = new Query("MATCH (p: Phenotype {id: $source}), (c: Phenotype {id: $child}) MERGE (p)-[:HAS_CHILD]->(c)",
 							parameters("source", term.id().getValue(), "child", child.getValue()));
 					queries.add(query);
@@ -229,17 +233,17 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 
 
 	Map<TermId, String> phenotypeToCategory(Ontology hpoOntology){
-		HpoCategoryMap hpoCatMap = new HpoCategoryMap();
+		HpoCategoryLookup hpoCategoryLookup = new HpoCategoryLookup(hpoOntology.graph(), HpoCategories.preset());
 		List<TermId> allTerms = hpoOntology.getTerms().stream().map(Term::id)
 				.filter(x -> x.getPrefix().equals("HP")).distinct().toList();
-		final Map<TermId, String> termToCategory = new HashMap<>();
-		hpoCatMap.addAnnotatedTerms(allTerms, hpoOntology);
-		hpoCatMap.getActiveCategoryList().forEach(category -> {
-			category.getAnnotatingTermIds().forEach(t -> {
-				termToCategory.put(t, category.getLabel());
-			});
-		});
-		return termToCategory;
+		return allTerms.stream().collect(Collectors.toMap(t -> t, t -> {
+					Optional<Term> term = hpoCategoryLookup.getPrioritizedCategory(t);
+					if (term.isEmpty()) {
+						return "Other";
+					} else {
+						return term.get().getName();
+					}
+				}));
 	}
 
 	static String formatSources(List<AnnotationReference> sources){
