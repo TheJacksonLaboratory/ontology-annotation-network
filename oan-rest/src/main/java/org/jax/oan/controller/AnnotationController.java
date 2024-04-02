@@ -17,7 +17,7 @@ import org.jax.oan.service.*;
 import org.monarchinitiative.phenol.base.PhenolRuntimeException;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
-@Controller("${api-prefix}/annotation")
+@Controller("/annotation")
 @SerdeImport(Disease.class)
 @SerdeImport(Gene.class)
 @SerdeImport(Phenotype.class)
@@ -51,7 +51,7 @@ public class AnnotationController {
 	 * @throws OntologyAnnotationNetworkRuntimeException which will be a 500
 	 */
 	@Get(uri="/{id}", produces="application/json")
-	public HttpResponse<?> all(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*") @PathVariable String id) {
+	public HttpResponse<?> all(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*", format = "string") @PathVariable String id) {
 		try {
 			TermId termId = TermId.of(id);
 			return switch (SupportedEntity.from(termId)) {
@@ -78,8 +78,8 @@ public class AnnotationController {
 	 */
 	@Get(uri="/{id}/download/{type}", produces="application/json")
 	public SystemFile download(
-			@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*") @PathVariable String id,
-			@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*") @PathVariable String type) {
+			@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*", format = "string") @PathVariable String id,
+			@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*", format = "string") @PathVariable String type) {
 		try {
 			TermId termId = TermId.of(id);
 			SupportedEntity entity = SupportedEntity.from(termId);

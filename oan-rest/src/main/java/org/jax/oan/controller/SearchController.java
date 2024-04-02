@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.jax.oan.core.SearchDto;
 import org.jax.oan.service.SearchService;
 
-@Controller("${api-prefix}/search")
+@Controller("/search")
 @SerdeImport(SearchDto.class)
 public class SearchController {
 	private SearchService searchService;
@@ -20,11 +20,14 @@ public class SearchController {
 	}
 
 	@Get(uri="/{entity}", produces="application/json")
-	public HttpResponse<?> searchEntity(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*")
+	public HttpResponse<?> searchEntity(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*", format = "string")
 											@PathVariable String entity,
+										@Schema(minLength = 1, maxLength = 255, type = "string", pattern = ".*", format = "string")
 										@QueryValue String q,
-			@QueryValue(value = "page", defaultValue = "0") @Schema(maxLength = 1000, type = "number") int page,
-			@QueryValue(value = "limit", defaultValue = "10") @Schema(maxLength = 10000, type = "number") int limit) {
+										@Schema(minLength = 0, maxLength = 1000, type = "number", format = "int32")
+											@QueryValue(value = "page", defaultValue = "0") int page,
+										@Schema(minLength = 0, maxLength = 10000, type = "number", format = "int32")
+											@QueryValue(value = "limit", defaultValue = "10") int limit) {
 
 		if (entity.equalsIgnoreCase("GENE")){
 			return HttpResponse.ok(this.searchService.searchGene(q.toUpperCase(), page, limit));

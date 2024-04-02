@@ -1,21 +1,24 @@
-api-prefix: /api/network
 micronaut:
     application:
         name: ontology-annotation-network
+    server:
+        context-path: /api/network
+        cors:
+            enabled: true
     router:
         static-resources:
             swagger:
-                mapping: /${api-prefix}/**
+                mapping: /api/network/**
                 paths: classpath:META-INF/swagger
             swagger-ui:
-                mapping: /${api-prefix}/docs/**
+                mapping: /api/network/docs/**
                 paths: classpath:META-INF/swagger/views/swagger-ui
     serde:
         serialization:
             inclusion: ALWAYS
-    server:
-        cors:
-            enabled: true
+endpoints:
+    all:
+        path: /api/network/
 neo4j:
     password: password
     uri: bolt://10.142.0.7:7687
