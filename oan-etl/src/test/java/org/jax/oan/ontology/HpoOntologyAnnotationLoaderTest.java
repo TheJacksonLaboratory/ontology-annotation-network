@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import org.monarchinitiative.phenol.ontology.data.TermId;
 
 @MicronautTest(environments = "test")
 class HpoOntologyAnnotationLoaderTest {
@@ -35,6 +36,8 @@ class HpoOntologyAnnotationLoaderTest {
 
 	final Driver driver;
 
+	Ontology hpoOntology;
+
 
 	public HpoOntologyAnnotationLoaderTest(Driver driver) throws IOException, OntologyAnnotationNetworkException {
 		this.driver = driver;
@@ -42,13 +45,13 @@ class HpoOntologyAnnotationLoaderTest {
 		this.graphLoader = new HpoOntologyAnnotationLoader(graphDatabaseWriter);
 		this.graphDatabaseOperations = new GraphDatabaseOperations(graphDatabaseWriter);
 		HpoDataResolver hpoDataResolver = HpoDataResolver.of(Path.of("src/test/resources"));
-		Ontology hpoOntology = OntologyLoader.loadOntology(hpoDataResolver.hpJson().toFile());
+		this.hpoOntology = OntologyLoader.loadOntology(hpoDataResolver.hpJson().toFile());
 		Ontology mondoOntology = OntologyLoader.loadOntology(hpoDataResolver.mondoJson().toFile());
 		final HpoaDiseaseDataContainer container = HpoaDiseaseDataLoader.of(Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET)).loadDiseaseData(hpoDataResolver.phenotypeAnnotations());
-		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).mim2GeneMedgen(hpoDataResolver.mim2geneMedgen())
+		final HpoAssociationData associations = HpoAssociationData.builder(this.hpoOntology).mim2GeneMedgen(hpoDataResolver.mim2geneMedgen())
 				.hpoDiseases(container).hgncCompleteSetArchive(hpoDataResolver.hgncCompleteSet()).build();
 		graphDatabaseWriter.truncate();
-		configureGraph(associations, container, hpoOntology, mondoOntology, hpoDataResolver.loinc());
+		configureGraph(associations, container, this.hpoOntology, mondoOntology, hpoDataResolver.loinc());
 	}
 
 	void configureGraph(HpoAssociationData associations,
@@ -163,5 +166,16 @@ class HpoOntologyAnnotationLoaderTest {
 		Collection<Term> diseases = List.of(target);
 
 		assertEquals(target, HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, diseases).orElse(null));
+	}
+
+	@Test
+	void phenotypeToCategory(){
+		Map<TermId, String> pc = this.graphLoader.phenotypeToCategory(this.hpoOntology);
+		assertTrue(pc.containsKey(TermId.of("HP:0100526")));
+		assertEquals(pc.get(TermId.of("HP:0100526")), "Respiratory System");
+		assertTrue((pc.containsKey(TermId.of("HP:0002086"))));
+		assertEquals(pc.get(TermId.of("HP:0002086")), "Respiratory System");
+		assertTrue((pc.containsKey(TermId.of("HP:0000001"))));
+		assertEquals(pc.get(TermId.of("HP:0000001")), "Other");
 	}
 }

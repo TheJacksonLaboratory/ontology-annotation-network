@@ -131,6 +131,56 @@
       },
       "type" : "CLASS",
       "lbl" : "Fake term 5"
+    }, {
+      "id" : "http://purl.obolibrary.org/obo/HP_0002086",
+      "meta" : {
+        "definition" : {
+          "val" : "Definition for HP:0000005.",
+          "xrefs" : [ "DDD:fake5" ]
+        },
+        "xrefs" : [ {
+          "val" : "UMLS:C0342205"
+        }, {
+          "val" : "SNOMEDCT_US:237569006"
+        } ],
+        "basicPropertyValues" : [ {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#creation_date",
+          "val" : "2012-04-22T05:56:30Z"
+        }, {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#hasOBONamespace",
+          "val" : "human_phenotype"
+        }, {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#created_by",
+          "val" : "peter"
+        } ]
+      },
+      "type" : "CLASS",
+      "lbl" : "Respitory System"
+    }, {
+      "id" : "http://purl.obolibrary.org/obo/HP_0100526",
+      "meta" : {
+        "definition" : {
+          "val" : "Definition for HP:0000005.",
+          "xrefs" : [ "DDD:fake5" ]
+        },
+        "xrefs" : [ {
+          "val" : "UMLS:C0342205"
+        }, {
+          "val" : "SNOMEDCT_US:237569006"
+        } ],
+        "basicPropertyValues" : [ {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#creation_date",
+          "val" : "2012-04-22T05:56:30Z"
+        }, {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#hasOBONamespace",
+          "val" : "human_phenotype"
+        }, {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#created_by",
+          "val" : "peter"
+        } ]
+      },
+      "type" : "CLASS",
+      "lbl" : "Neoplasm of lung"
     } ],
     "edges" : [  {
       "sub" : "http://purl.obolibrary.org/obo/HP_0000002",
@@ -148,7 +198,12 @@
       "sub" : "http://purl.obolibrary.org/obo/HP_0000005",
       "pred" : "is_a",
       "obj" : "http://purl.obolibrary.org/obo/HP_0000004"
-    }  ],
+    } ,
+      {
+        "sub" : "http://purl.obolibrary.org/obo/HP_0100526",
+        "pred" : "is_a",
+        "obj" : "http://purl.obolibrary.org/obo/HP_0002086"
+      } ],
     "id" : "http://purl.obolibrary.org/obo/hp.json",
     "meta" : {
       "subsets" : [ ],
