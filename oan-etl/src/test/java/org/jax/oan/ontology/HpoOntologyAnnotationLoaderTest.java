@@ -71,7 +71,7 @@ class HpoOntologyAnnotationLoaderTest {
 			List<Node> nodes = session.run("MATCH (n: Phenotype) RETURN n")
 					.list(record -> record.get("n").asNode());
 			Node node = session.run("MATCH (n: Phenotype {id: 'HP:0000005'}) RETURN n").single().get("n").asNode();
-			assertEquals(5, nodes.size());
+			assertEquals(8, nodes.size());
 			assertEquals("Fake term 5", node.get("name").asString());
 		}
 	}
