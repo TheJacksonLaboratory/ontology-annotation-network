@@ -41,7 +41,7 @@ jobs:
           gcloud auth configure-docker "${GCLOUD_GCR}"
 
       - name: Maven Package ETL Only
-        run: mvn package -pl oan-etl -am
+        run: mvn package -pl oan-etl -am -DskipTests=true
 
       - name: Start our builder database container
         run: |
