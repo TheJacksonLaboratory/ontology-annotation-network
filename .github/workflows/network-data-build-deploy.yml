@@ -93,6 +93,9 @@ jobs:
             # turn on loader
             gcloud compute instances start ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b    
 
+        - name: Sleep for startup script time
+          run: sleep 30
+
         - name: Stop loader container, Swap disk to prod
           id: swap2
           run: |
