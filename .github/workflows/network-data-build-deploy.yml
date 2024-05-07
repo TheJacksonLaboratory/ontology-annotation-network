@@ -106,7 +106,7 @@ jobs:
         - name: Setup Google Cloud CLI
           uses: 'google-github-actions/setup-gcloud@v1'
         - name: Redeploy Rest
-          run:
+          run: |
             gcloud run deploy ontology-annotation-rest --quiet \
             --image "us-docker.pkg.dev/jax-cs-registry/docker/ontology/ontology-annotation-network-rest:latest" --project "${GCLOUD_PROJECT_ID}" \
             --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
