@@ -94,7 +94,7 @@ jobs:
             gcloud compute instances start ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b    
 
         - name: Sleep for startup script time
-          run: sleep 30
+          run: sleep 15
 
         - name: Stop loader container, Swap disk to prod
           id: swap2
@@ -110,6 +110,7 @@ jobs:
 
         - name: Redeploy Rest
           run: |
+            sleep 15
             gcloud run deploy ontology-annotation-network-rest --quiet \
             --image "us-docker.pkg.dev/jax-cs-registry/docker/ontology/ontology-annotation-network-rest:latest" --project "${GCLOUD_PROJECT_ID}" \
             --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
