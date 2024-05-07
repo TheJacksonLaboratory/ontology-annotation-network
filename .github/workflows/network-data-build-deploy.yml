@@ -67,11 +67,11 @@ jobs:
         id: swap1
         run: |
           # Stop the instance
-          gcloud compute instances stop ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b \
+          gcloud compute instances stop ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
           # Detach disk
-          gcloud compute instances detach-disk ontology-annotation-network-containerized --disk=graph-data
+          gcloud compute instances detach-disk ontology-annotation-network-containerized --disk=graph-data --zone=us-east1-b
           # Attach disk to loader
-          gcloud compute instances attach-disk ontology-annotation-loader --disk=graph-data
+          gcloud compute instances attach-disk ontology-annotation-loader --disk=graph-data --zone=us-east1-b
           # turn on loader
           gcloud compute instances start ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b    
           
@@ -81,8 +81,8 @@ jobs:
           # turn off loader
           gcloud compute instances stop ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
           # detach disk
-          gcloud compute instances detach-disk ontology-annotation-loader --disk=graph-data
+          gcloud compute instances detach-disk ontology-annotation-loader --disk=graph-data --zone=us-east1-b
           # re-attach disk
-          gcloud compute instances attach-disk ontology-annotation-network-containerized --disk=graph-data
+          gcloud compute instances attach-disk ontology-annotation-network-containerized --disk=graph-data --zone=us-east1-b
           # turn on instance
           gcloud compute instances start ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
