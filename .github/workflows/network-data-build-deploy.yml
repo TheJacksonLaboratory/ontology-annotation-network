@@ -1,6 +1,12 @@
 name: Deploy Data
 on:
   workflow_dispatch:
+    inputs:
+      redeploy:
+        description: 'Redeploy Only'
+        default: true
+        required: true
+        type: boolean
 env:
   GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
   GCLOUD_REGION: us-east1
@@ -12,6 +18,7 @@ env:
   
 jobs:
   build:
+    if: ${{ inputs.redeploy != true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -86,3 +93,21 @@ jobs:
           gcloud compute instances attach-disk ontology-annotation-network-containerized --disk=graph-data --zone=us-east1-b
           # turn on instance
           gcloud compute instances start ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
+
+  redeploy:
+      if: ${{ inputs.redeploy == true }}
+      runs-on: ubuntu-latest
+      steps:
+        - name: Authenticate to Google Cloud
+          uses: 'google-github-actions/auth@v1'
+          with:
+            credentials_json: '${{ secrets.GCLOUD_SA_KEY }}'
+
+        - name: Setup Google Cloud CLI
+          uses: 'google-github-actions/setup-gcloud@v1'
+        - name: Redeploy Rest
+          run:
+            gcloud run deploy ontology-annotation-rest --quiet \
+            --image "us-docker.pkg.dev/jax-cs-registry/docker/ontology/ontology-annotation-network-rest:latest" --project "${GCLOUD_PROJECT_ID}" \
+            --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
+            --memory 4Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
