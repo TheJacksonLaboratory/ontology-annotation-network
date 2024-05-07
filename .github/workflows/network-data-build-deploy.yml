@@ -2,8 +2,8 @@ name: Deploy Data
 on:
   workflow_dispatch:
     inputs:
-      redeploy:
-        description: 'Redeploy Only'
+      reload:
+        description: 'Data Reload'
         default: true
         required: true
         type: boolean
@@ -18,7 +18,7 @@ env:
   
 jobs:
   build:
-    if: ${{ inputs.redeploy != true }}
+    if: ${{ inputs.reload == true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -70,32 +70,7 @@ jobs:
           gsutil -m rm -r gs://jax-robinson-ontology-annotation-network-data/data/
           gsutil -m cp -r ./neo4j/data/* gs://jax-robinson-ontology-annotation-network-data/data/
 
-      - name: Stop prod container, Swap disk to loader
-        id: swap1
-        run: |
-          # Stop the instance
-          gcloud compute instances stop ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
-          # Detach disk
-          gcloud compute instances detach-disk ontology-annotation-network-containerized --disk=graph-data --zone=us-east1-b
-          # Attach disk to loader
-          gcloud compute instances attach-disk ontology-annotation-loader --disk=graph-data --zone=us-east1-b
-          # turn on loader
-          gcloud compute instances start ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b    
-          
-      - name: Stop loader container, Swap disk to prod
-        id: swap2
-        run: |    
-          # turn off loader
-          gcloud compute instances stop ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
-          # detach disk
-          gcloud compute instances detach-disk ontology-annotation-loader --disk=graph-data --zone=us-east1-b
-          # re-attach disk
-          gcloud compute instances attach-disk ontology-annotation-network-containerized --disk=graph-data --zone=us-east1-b
-          # turn on instance
-          gcloud compute instances start ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
-
   redeploy:
-      if: ${{ inputs.redeploy == true }}
       runs-on: ubuntu-latest
       steps:
         - name: Authenticate to Google Cloud
@@ -105,6 +80,31 @@ jobs:
 
         - name: Setup Google Cloud CLI
           uses: 'google-github-actions/setup-gcloud@v1'
+
+        - name: Stop prod container, Swap disk to loader
+          id: swap1
+          run: |
+            # Stop the instance
+            gcloud compute instances stop ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
+            # Detach disk
+            gcloud compute instances detach-disk ontology-annotation-network-containerized --disk=graph-data --zone=us-east1-b
+            # Attach disk to loader
+            gcloud compute instances attach-disk ontology-annotation-loader --disk=graph-data --zone=us-east1-b
+            # turn on loader
+            gcloud compute instances start ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b    
+
+        - name: Stop loader container, Swap disk to prod
+          id: swap2
+          run: |
+            # turn off loader
+            gcloud compute instances stop ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
+            # detach disk
+            gcloud compute instances detach-disk ontology-annotation-loader --disk=graph-data --zone=us-east1-b
+            # re-attach disk
+            gcloud compute instances attach-disk ontology-annotation-network-containerized --disk=graph-data --zone=us-east1-b
+            # turn on instance
+            gcloud compute instances start ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
+
         - name: Redeploy Rest
           run: |
             gcloud run deploy ontology-annotation-network-rest --quiet \
