@@ -62,5 +62,27 @@ jobs:
           gsutil -m cp -r gs://jax-robinson-ontology-annotation-network-data/data/* gs://jax-robinson-ontology-annotation-network-data/backup/
           gsutil -m rm -r gs://jax-robinson-ontology-annotation-network-data/data/
           gsutil -m cp -r ./neo4j/data/* gs://jax-robinson-ontology-annotation-network-data/data/
-  
-      
+
+      - name: Stop prod container, Swap disk to loader
+        id: swap1
+        run: |
+          # Stop the instance
+          gcloud compute instances stop ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b \
+          # Detach disk
+          gcloud compute instances detach-disk ontology-annotation-network-containerized --disk=graph-data
+          # Attach disk to loader
+          gcloud compute instances attach-disk ontology-annotation-loader --disk=graph-data
+          # turn on loader
+          gcloud compute instances start ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b    
+          
+      - name: Stop loader container, Swap disk to prod
+        id: swap2
+        run: |    
+          # turn off loader
+          gcloud compute instances stop ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
+          # detach disk
+          gcloud compute instances detach-disk ontology-annotation-loader --disk=graph-data
+          # re-attach disk
+          gcloud compute instances attach-disk ontology-annotation-network-containerized --disk=graph-data
+          # turn on instance
+          gcloud compute instances start ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
