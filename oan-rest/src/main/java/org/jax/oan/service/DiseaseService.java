@@ -1,22 +1,26 @@
 package org.jax.oan.service;
 
+import io.micronaut.serde.annotation.SerdeImport;
 import jakarta.inject.Singleton;
 import org.jax.oan.core.*;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.repository.DiseaseRepository;
+import org.jax.oan.repository.PhenotypeRepository;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
-import java.util.Collection;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Singleton
+@SerdeImport(Disease.class)
 public class DiseaseService {
 
 	private final DiseaseRepository diseaseRepository;
+	private final PhenotypeRepository phenotypeRepository;
 
-	public DiseaseService(DiseaseRepository diseaseRepository) {
+	public DiseaseService(DiseaseRepository diseaseRepository, PhenotypeRepository phenotypeRepository) {
 		this.diseaseRepository = diseaseRepository;
+		this.phenotypeRepository = phenotypeRepository;
 	}
 
 	public DiseaseAnnotationDto findAll(TermId termId) throws OntologyAnnotationNetworkException {
@@ -32,5 +36,25 @@ public class DiseaseService {
 					genes);
 		}
 		throw new OntologyAnnotationNetworkException(String.format("Could not find disease with id %s", termId.getValue()));
+	}
+
+	public Collection<Disease> findIntersectingByPhenotypes(Collection<TermId> termIds){
+		List<Disease> intersecting = new ArrayList<>();
+		for (TermId id: termIds){
+			try {
+				if (intersecting.isEmpty()){
+					intersecting.addAll(phenotypeRepository.findDiseasesByTerm(id));
+				} else {
+					Collection<Disease> diseases = phenotypeRepository.findDiseasesByTerm(id);
+					intersecting = intersecting.stream().distinct()
+							.filter(diseases::contains)
+							.collect(Collectors.toList());
+				}
+
+			} catch (Exception ex) {
+				return Collections.emptyList();
+			}
+		}
+		return intersecting.stream().distinct().toList();
 	}
 }

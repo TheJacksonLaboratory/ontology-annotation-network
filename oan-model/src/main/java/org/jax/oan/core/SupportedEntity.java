@@ -31,7 +31,7 @@ public enum SupportedEntity {
 		return SupportedEntity.UNKNOWN;
 	}
 
-	public static boolean isSupportedDownload(SupportedEntity entity, SupportedEntity type){
+	public static boolean isLinkedType(SupportedEntity entity, SupportedEntity type){
 		return switch (entity) {
 			case PHENOTYPE -> (type.equals(DISEASE) || type.equals(GENE));
 			case DISEASE -> (type.equals(PHENOTYPE) || type.equals(GENE));
