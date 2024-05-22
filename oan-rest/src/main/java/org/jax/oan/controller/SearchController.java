@@ -50,7 +50,7 @@ public class SearchController {
 		} else if (entity.equalsIgnoreCase("DISEASE")){
 			return HttpResponse.ok(this.searchService.searchDisease(q.toUpperCase(), page, limit));
 		} else {
-			return HttpResponse.noContent();
+			return HttpResponse.badRequest();
 		}
 	}
 
