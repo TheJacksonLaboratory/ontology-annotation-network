@@ -8,7 +8,6 @@ import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.exceptions.HttpStatusException;
 import io.micronaut.http.server.types.files.SystemFile;
 import io.micronaut.serde.annotation.SerdeImport;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jax.oan.core.*;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
@@ -84,7 +83,7 @@ public class AnnotationController {
 			TermId termId = TermId.of(id);
 			SupportedEntity entity = SupportedEntity.from(termId);
 			SupportedEntity downloadType = SupportedEntity.valueOf(type.toUpperCase());
-			if (SupportedEntity.isSupportedDownload(entity, downloadType)){
+			if (SupportedEntity.isLinkedType(entity, downloadType)){
 				return this.downloadService.associations(termId, entity, downloadType);
 			} else {
 				throw new HttpStatusException(HttpStatus.BAD_REQUEST, String.format("Downloading %s associations for %s is not supported.", entity, termId.getValue()));

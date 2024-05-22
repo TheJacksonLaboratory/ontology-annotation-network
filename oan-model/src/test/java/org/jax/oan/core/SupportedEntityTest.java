@@ -44,12 +44,12 @@ class SupportedEntityTest {
 
 	@ParameterizedTest
 	@MethodSource
-	void isSupportedDownload(SupportedEntity entity, SupportedEntity association) {
-		assertTrue(SupportedEntity.isSupportedDownload(entity, association));
-		assertFalse(SupportedEntity.isSupportedDownload(entity, entity));
+	void isLinkedType(SupportedEntity entity, SupportedEntity association) {
+		assertTrue(SupportedEntity.isLinkedType(entity, association));
+		assertFalse(SupportedEntity.isLinkedType(entity, entity));
 	}
 
-	private static Stream<Arguments> isSupportedDownload() {
+	private static Stream<Arguments> isLinkedType() {
 		return Stream.of(
 						Arguments.of(SupportedEntity.GENE, SupportedEntity.PHENOTYPE),
 						Arguments.of(SupportedEntity.PHENOTYPE, SupportedEntity.DISEASE),

@@ -15,6 +15,7 @@ import org.neo4j.driver.Transaction;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -70,7 +71,7 @@ class DiseaseRepositoryTest {
 	}
 
 	@Test
-	void findDisease(){
+	void findDiseases(){
 		Collection<Disease> diseases = diseaseRepository.findDiseases("bad");
 		List<Disease> expected = List.of(
 				new Disease(TermId.of("OMIM:555555"), "Bad disease", "MONDO:0000001", "Rare disease"),
@@ -78,5 +79,14 @@ class DiseaseRepositoryTest {
 		);
 
 		assertTrue(diseases.containsAll(expected));
+	}
+
+	@Test
+	void findDiseaseById(){
+		Optional<Disease> disease = diseaseRepository.findDiseaseById(TermId.of("OMIM:555555"));
+		Disease expected = new Disease(TermId.of("OMIM:555555"), "Bad disease", "MONDO:0000001", "Rare disease");
+
+		assertTrue(disease.isPresent());
+		assertEquals(disease.get(), expected);
 	}
 }

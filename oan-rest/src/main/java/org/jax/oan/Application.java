@@ -12,11 +12,11 @@ import io.swagger.v3.oas.annotations.servers.Server;
 @OpenAPIDefinition(
     info = @Info(
             title = "ontology-annotation-network",
-            version = "1.0.3-SNAPSHOT",
+            version = "1.0.4",
             description = "A restful service for access to the ontology annotation network.",
             contact = @Contact(name = "Michael Gargano", email = "Michael.Gargano@jax.org")
     ), servers = {@Server(url = "https://ontology.jax.org/api/network", description = "Production Server URL")
-    //  @Server(url = "http://localhost:8080/api/network", description = "Development Server URL")
+//      @Server(url = "http://localhost:8080/api/network", description = "Development Server URL")
     }
 )
 public class Application {
