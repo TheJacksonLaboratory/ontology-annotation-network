@@ -247,7 +247,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	}
 
 	static String formatSources(List<AnnotationReference> sources){
-		final String joinedSources = sources.stream().map(AnnotationReference::id).map(TermId::getValue).collect(Collectors.joining(","));
+		final String joinedSources = sources.stream().map(AnnotationReference::id).map(TermId::getValue).collect(Collectors.joining(";"));
 		return  joinedSources.length() > 1 ? joinedSources : "UNKNOWN";
 	}
 

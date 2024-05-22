@@ -148,7 +148,7 @@ class HpoOntologyAnnotationLoaderTest {
 		assertEquals("PMID:000913", HpoOntologyAnnotationLoader.formatSources(singleReference));
 		List<AnnotationReference> multipleReferences = List.of(AnnotationReference.of(
 				TermId.of("PMID:000913"), EvidenceCode.IEA), AnnotationReference.of(TermId.of("PMID:000924"), EvidenceCode.IEA));
-		assertEquals("PMID:000913,PMID:000924", HpoOntologyAnnotationLoader.formatSources(multipleReferences));
+		assertEquals("PMID:000913;PMID:000924", HpoOntologyAnnotationLoader.formatSources(multipleReferences));
 	}
 
 	@Test
