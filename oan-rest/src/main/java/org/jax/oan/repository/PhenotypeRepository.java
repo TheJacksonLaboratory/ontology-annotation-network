@@ -74,7 +74,7 @@ public class PhenotypeRepository {
 
 			while (result.hasNext()) {
 				Value value = result.next().get("a");
-				Assay assay = new Assay(TermId.of(value.get("id").asString()), value.get("name").asString());
+				Assay assay = new Assay(TermId.of(String.format("LOINC:%s", value.get("id").asString())), value.get("name").asString());
 				assays.add(assay);
 			}
 		}
