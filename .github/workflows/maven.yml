@@ -1,8 +1,6 @@
-name: Java CI with Maven
+name: Java Test PR's with Maven
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
 
