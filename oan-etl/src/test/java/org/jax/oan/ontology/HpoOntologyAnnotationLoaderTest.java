@@ -157,10 +157,11 @@ class HpoOntologyAnnotationLoaderTest {
 
 	@Test
 	void findMondoEquivalent(){
-		TermId targetId = TermId.of("OMIM:619340");
-		Term target = Term.builder(targetId).xrefs(
+		TermId targetId = TermId.of("ORPHA:619340");
+		Term target = Term.builder(TermId.of("MONDO:999999")).databaseXrefs(
 				List.of(
-						new Dbxref("OMIM:619340", "", null)
+						new SimpleXref("Orphanet:0999923"),
+						new SimpleXref("Orphanet:619340")
 				)
 		).name("Bad Disease 1").build();
 		Collection<Term> diseases = List.of(target);

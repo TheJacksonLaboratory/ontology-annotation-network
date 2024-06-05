@@ -16,10 +16,7 @@ import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataLoader;
 import org.monarchinitiative.phenol.io.OntologyLoader;
-import org.monarchinitiative.phenol.ontology.data.Dbxref;
-import org.monarchinitiative.phenol.ontology.data.Ontology;
-import org.monarchinitiative.phenol.ontology.data.Term;
-import org.monarchinitiative.phenol.ontology.data.TermId;
+import org.monarchinitiative.phenol.ontology.data.*;
 import org.neo4j.driver.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -263,8 +260,12 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	static Optional<Term> findMondoEquivalent(TermId target, Collection<Term> diseases){
 		return diseases.stream().filter(term ->
 				term.getXrefs().stream().map(Dbxref::getName).map(TermId::of).anyMatch(s ->
-					s.getValue().equals(target.toString()) || s.getValue().equals(
-							TermId.of(AlternativePrefix.from(target.getPrefix()), s.getId()).getValue())
-		)).findFirst();
+						s.getValue().equals(target.toString()) || s.getValue().equals(
+								TermId.of(AlternativePrefix.from(target.getPrefix()), target.getId()).getValue())
+				)
+
+		).findFirst();
+
+
 	}
 }
