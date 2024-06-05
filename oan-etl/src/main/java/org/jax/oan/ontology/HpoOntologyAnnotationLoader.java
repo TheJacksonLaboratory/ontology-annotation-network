@@ -114,7 +114,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		logger.info("Loading Diseases...");
 		ArrayList<Query> queries = new ArrayList<>(Collections.emptyList());
 		diseases.diseaseData().stream().distinct().forEach(d -> {
-					Optional<Term> equivalent = findMondoEquivalent(d.id(), mondoTerms);
+					Optional<Term> equivalent = findMondoEquivalent(d.id(), d.name(), mondoTerms);
 					String mondoId = "";
 					String description = "No disease description found.";
 					if (equivalent.isPresent()){
@@ -257,15 +257,32 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		return frequency;
 	}
 
-	static Optional<Term> findMondoEquivalent(TermId target, Collection<Term> diseases){
-		return diseases.stream().filter(term ->
+	static Optional<Term> findMondoEquivalent(TermId target, String targetName, Collection<Term> diseases){
+		 List<Term> equivalence = diseases.stream().filter(term ->
 				term.getXrefs().stream().map(Dbxref::getName).map(TermId::of).anyMatch(s ->
 						s.getValue().equals(target.toString()) || s.getValue().equals(
 								TermId.of(AlternativePrefix.from(target.getPrefix()), target.getId()).getValue())
 				)
 
-		).findFirst();
+		).toList();
 
-
+		 if (equivalence.isEmpty()) {
+			 return Optional.empty();
+		 } else if (equivalence.size() > 1) {
+			  // Sometimes we have errenous equivalence so we want to then see if we can find if the names start with each other
+			 // Make sure our target has a name
+			 if (targetName.length() > 3){
+				 List<Term> equivalenceByName = equivalence.stream().filter(a -> a.getName().toLowerCase().startsWith(targetName.substring(0, 3).toLowerCase())).toList();
+				 if (equivalenceByName.isEmpty()){
+					 return Optional.empty();
+				 } else {
+					 return equivalenceByName.stream().findFirst();
+				 }
+			 } else {
+				 return Optional.empty();
+			 }
+		 } else {
+			 return equivalence.stream().findFirst();
+		 }
 	}
 }
