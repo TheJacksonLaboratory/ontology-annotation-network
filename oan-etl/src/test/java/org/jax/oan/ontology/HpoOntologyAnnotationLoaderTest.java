@@ -19,10 +19,7 @@ import org.neo4j.driver.types.Node;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.monarchinitiative.phenol.ontology.data.TermId;
@@ -156,17 +153,59 @@ class HpoOntologyAnnotationLoaderTest {
 	}
 
 	@Test
-	void findMondoEquivalent(){
-		TermId targetId = TermId.of("OMIM:619340");
+	void findMondoEquivalentFromSingleMatchingOne(){
+		TermId targetId = TermId.of("ORPHA:619340");
 		Term target = Term.builder(targetId).xrefs(
 				List.of(
+						new Dbxref("Orphanet:619340", "", null),
 						new Dbxref("OMIM:619340", "", null)
 				)
 		).name("Bad Disease 1").build();
 		Collection<Term> diseases = List.of(target);
 
-		assertEquals(target, HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, diseases).orElse(null));
+		assertEquals(target, HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, "Bad Disease 1", diseases).orElse(null));
 	}
+
+	@Test
+	void findMondoEquivalentFromMultipleMatchingTwo(){
+		TermId targetId = TermId.of("ORPHA:619340");
+		Term target = Term.builder(targetId).xrefs(
+				List.of(
+						new Dbxref("Orphanet:619340", "", null),
+						new Dbxref("OMIM:619340", "", null)
+				)
+		).name("Bad Disease 2").build();
+		Term target2 = Term.builder(targetId).xrefs(
+				List.of(
+						new Dbxref("Orphanet:619340", "", null),
+						new Dbxref("OMIM:619340", "", null)
+				)
+		).name("Other Disease 3").build();
+		Collection<Term> diseases = List.of(target, target2);
+
+		assertEquals(target2, HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, "Other Disease 3", diseases).orElse(null));
+	}
+
+	@Test
+	void findMondoEquivalentFromMultipleMatchingNoneByName(){
+		TermId targetId = TermId.of("ORPHA:619340");
+		Term target = Term.builder(targetId).xrefs(
+				List.of(
+						new Dbxref("Orphanet:619340", "", null),
+						new Dbxref("OMIM:619340", "", null)
+				)
+		).name("Bad Disease 2").build();
+		Term target2 = Term.builder(targetId).xrefs(
+				List.of(
+						new Dbxref("Orphanet:619340", "", null),
+						new Dbxref("OMIM:619340", "", null)
+				)
+		).name("Other Disease 3").build();
+		Collection<Term> diseases = List.of(target, target2);
+
+		assertEquals(Optional.empty(), HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, "Quadri Disease", diseases));
+	}
+
 
 	@Test
 	void phenotypeToCategory(){
