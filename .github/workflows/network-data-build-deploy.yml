@@ -89,12 +89,12 @@ jobs:
           # turn on instance
           gcloud compute instances start ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
 
-      - name: Sleep for startup script time
-        run: sleep 30
-
-      - name: Redeploy Rest
-        run: |
-          gcloud run deploy ontology-annotation-network-rest --quiet \
-          --image "us-docker.pkg.dev/jax-cs-registry/docker/ontology/ontology-annotation-network-rest:latest" --project "${GCLOUD_PROJECT_ID}" \
-          --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
-          --memory 4Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
+#      - name: Sleep for startup script time
+#        run: sleep 30
+#
+#      - name: Redeploy Rest
+#        run: |
+#          gcloud run deploy ontology-annotation-network-rest --quiet \
+#          --image "us-docker.pkg.dev/jax-cs-registry/docker/ontology/ontology-annotation-network-rest:latest" --project "${GCLOUD_PROJECT_ID}" \
+#          --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
+#          --memory 4Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
