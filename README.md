@@ -22,9 +22,18 @@ Pre-package modules using
     A ontologyModule to load our graph data which includes phenotypes, diseases, genes, assays. There
     are multiple loaders for the different ontologies that are supported
 
-Running
+Prequisite
+```
+ docker pull neo4j:community-bullseye
+ docker run -d -p7474:7474 -p7687:7687 -v ./neo4j/data:/data  --env NEO4J_AUTH=neo4j/password neo4j:community-bullseye
+```
+
+Running (~4min)
 
 ```
+    # Create data
+    bash update.sh
+    # Load data into graph
     java -jar oan-etl/target/<jar>
 ```
 
