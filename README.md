@@ -13,28 +13,31 @@ Micronaut 4.1.2
 
 ### Modules
 
-Pre-package modules using
+[Get the latest artifacts](https://github.com/TheJacksonLaboratory/ontology-annotation-network/releases/latest)
+
+or
+
+Package modules using
 ```
     ./mvnw clean package -pl <module> -am
 ```
 
 #### OAN-ETL
-    A ontologyModule to load our graph data which includes phenotypes, diseases, genes, assays. There
-    are multiple loaders for the different ontologies that are supported
+An ontology module to load our graph data which includes phenotypes, diseases, genes, assays.
 
-Prequisite
+Start neo4j
 ```
  docker pull neo4j:community-bullseye
  docker run -d -p7474:7474 -p7687:7687 -v ./neo4j/data:/data  --env NEO4J_AUTH=neo4j/password neo4j:community-bullseye
 ```
 
-Running (~4min)
-
+Running data load (~4min)
 ```
     # Create data
     bash update.sh
+    
     # Load data into graph
-    java -jar oan-etl/target/<jar>
+    java -jar <etl-jar> -d=data/
 ```
 
 Testing
@@ -44,13 +47,13 @@ Testing
 ```
 
 #### OAN-REST
-    A ontologyModule that exposes our graph via a REST-API. This will be used for the hpo web application
-    and deployed to google cloud.
+
+An ontology module that exposes our graph via a REST-API.
 
 Running
 
 ```
-     java -jar oan-rest/target/<jar>
+     java -jar <rest-jar>
 ```
 
 Testing
