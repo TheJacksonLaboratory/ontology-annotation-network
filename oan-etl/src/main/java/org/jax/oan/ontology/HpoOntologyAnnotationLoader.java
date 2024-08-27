@@ -1,11 +1,10 @@
 package org.jax.oan.ontology;
 
-import org.jax.oan.core.AlternativePrefix;
+import org.jax.oan.core.*;
 import org.jax.oan.exception.OntologyAnnotationNetworkDataException;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
 import org.jax.oan.graph.GraphDatabaseOperations;
-import org.jax.oan.core.OntologyModule;
 import org.monarchinitiative.phenol.annotations.formats.AnnotationReference;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoAssociationData;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoGeneAnnotation;
@@ -21,6 +20,8 @@ import org.monarchinitiative.phenol.ontology.data.Ontology;
 import org.monarchinitiative.phenol.ontology.data.Term;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 import org.neo4j.driver.Query;
+import org.neo4j.driver.Result;
+import org.neo4j.driver.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.neo4j.driver.Values.parameters;
@@ -79,6 +81,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		geneToPhenotype(associations);
 		diseaseToGene(associations);
 		assayToPhenotype(dataResolver.loinc());
+		medicalAction(dataResolver.maxoa());
 	}
 	void phenotypes(Collection<Term> phenotypes, Map<TermId, String> categories) throws OntologyAnnotationNetworkDataException {
 			logger.info("Loading Phenotypes...");
@@ -228,6 +231,51 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		}
 		graphWriter().write(queries);
 		logger.info("Done");
+	}
+
+	void medicalAction(Path maxoa){
+		logger.info("Loading Medical Action Relationships...");
+		ArrayList<Query> queries = new ArrayList<>(Collections.emptyList());
+		try (BufferedReader reader = new BufferedReader(new FileReader(maxoa.toFile()))) {
+			queries.clear();
+			String line;
+			reader.readLine();
+
+			while ((line = reader.readLine()) != null) {
+				String[] fields = line.split("\t");
+				TermId mondo = TermId.of(fields[0]);
+				TermId phenotype = TermId.of(fields[5]);
+				MedicalActionMetadata meta;
+				Query connectMedicalAction;
+				Query createChemicalExtension;
+				Query createMedicalAction = new Query("MERGE (a:MedicalAction {id: $id, name: $name})",
+						parameters("id", fields[3], "name",fields[4]));
+
+				if (!fields[8].isEmpty()){
+					 meta = new MedicalActionMetadata(fields[2], Evidence.valueOf(fields[7]), new Extension(TermId.of(fields[8]), fields[9]), MedicalActionRelation.valueOf(fields[6]), fields[12]);
+					 createChemicalExtension = new Query("MERGE (c:ChemicalExtension {id: $extensionId, name: $extensionName})", parameters("extensionId", meta.extension().getId(), "extensionName", meta.extension().getName()));
+					 connectMedicalAction = new Query("MATCH (p:Phenotype {id: $phenotypeId}), (m:MedicalAction {id: $medicalAction}), (d:Disease {mondoId: $diseaseId}), (c:ChemicalExtension {id: $extensionId})  WHERE d.id IS NOT NULL WITH p,m,d,c  " +
+							"MERGE (m)-[:CLARIFIES {by:$relation}]->(p) MERGE (mm:MedicalActionMetadata {source: $sourceId, evidence: $evidenceCode, author: $author}) WITH mm, p, d, c MERGE (p)<-[:WITH_METADATA {context: d.id}]-(mm)-[:EXTENDS]->(c)",
+							parameters("medicalAction", fields[3], "diseaseId", mondo.getValue(), "phenotypeId", phenotype.getValue(),
+									"relation", meta.medicalActionRelation().toString(), "sourceId", meta.sourceId(), "evidenceCode", meta.evidence().toString(), "extensionId", meta.extension().getId(), "author", meta.author()));
+					queries.add(createChemicalExtension);
+				} else {
+					 meta = new MedicalActionMetadata(fields[2], Evidence.valueOf(fields[7]), null, MedicalActionRelation.valueOf(fields[6]), fields[12]);
+					 connectMedicalAction = new Query("MATCH (p:Phenotype {id: $phenotypeId}), (m:MedicalAction {id: $medicalAction}), (d:Disease {mondoId: $diseaseId}) WHERE d.id IS NOT NULL WITH p,m,d " +
+							"MERGE (m)-[:CLARIFIES {by:$relation}]->(p) MERGE (mm:MedicalActionMetadata {source: $sourceId, evidence: $evidenceCode, author: $author}) WITH mm, p, d MERGE (p)<-[:WITH_METADATA {context: d.id}]-(mm)",
+							parameters("medicalAction", fields[3], "diseaseId", mondo.getValue(), "phenotypeId", phenotype.getValue(),
+									"relation", meta.medicalActionRelation().toString(), "sourceId", meta.sourceId(), "evidenceCode", meta.evidence().toString(), "author", meta.author()));
+
+				}
+
+				queries.add(createMedicalAction);
+				queries.add(connectMedicalAction);
+			}
+			graphWriter().write(queries);
+			logger.info("Done.");
+		} catch (IOException e) {
+			throw new OntologyAnnotationNetworkRuntimeException("There was a problem with the required assay file format.", e);
+		}
 	}
 
 

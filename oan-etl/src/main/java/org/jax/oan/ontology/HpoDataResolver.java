@@ -28,7 +28,7 @@ public class HpoDataResolver {
 	private void validateHpoFiles() throws OntologyAnnotationNetworkException {
 		boolean error = false;
 		List<Path> requiredFiles = List.of(hpJson(), hgncCompleteSet(), mim2geneMedgen(), phenotypeAnnotations(),
-				orpha2Gene(), loinc());
+				orpha2Gene(), loinc(), maxoa());
 		for (Path file : requiredFiles) {
 			if (!Files.isRegularFile(file)) {
 				LOGGER.error("Missing required file `{}` in `{}`.", file.toFile().getName(), dataDirectory.toAbsolutePath());
@@ -70,4 +70,6 @@ public class HpoDataResolver {
 	}
 
 	public Path mondoJson() { return dataDirectory.resolve("mondo-base.json"); }
+
+	public Path maxoa() { return dataDirectory.resolve("maxo-annotations.tsv"); }
 }

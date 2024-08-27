@@ -1,15 +1,12 @@
 package org.jax.oan.repository;
 
 import jakarta.inject.Singleton;
-import org.jax.oan.core.Assay;
-import org.jax.oan.core.Disease;
-import org.jax.oan.core.Gene;
+import org.jax.oan.core.*;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 import org.neo4j.driver.*;
+import org.neo4j.driver.Record;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import static org.neo4j.driver.Values.parameters;
 
@@ -79,5 +76,37 @@ public class PhenotypeRepository {
 			}
 		}
 		return assays;
+	}
+
+	/**
+	 * Give me all the assays that measure this phenotype.
+	 * @param termId the termId of the phenotype
+	 * @return List of assays or empty list
+	 */
+	public Collection<MedicalActionExtended> findMedicalActionsByTerm(TermId termId){
+		Collection<MedicalActionExtended> medicalActions = new ArrayList<>();
+		try (Transaction tx = driver.session().beginTransaction()) {
+			Result result = tx.run("MATCH (m: MedicalAction)-[c:CLARIFIES]->(p: Phenotype {id: $id})<-[:WITH_METADATA]-(mm:MedicalActionMetadata) RETURN DISTINCT m,mm,c ORDER BY elementId(m)", parameters("id", termId.getValue()));
+			List<SourceRelation> sourceRelations = new ArrayList<>();
+			MedicalAction previous = null;
+			while (result.hasNext()) {
+				Record record = result.next();
+				Value subject = record.get("m");
+				Value relation = record.get("c");
+				Value source = record.get("mm");
+				if(previous == null || Objects.equals(subject.get("id").asString(), previous.getId())){
+					sourceRelations.add(new SourceRelation(MedicalActionRelation.valueOf(relation.get("by").asString()), source.get("source").asString()));
+				} else {
+						medicalActions.add(new MedicalActionExtended(previous, sourceRelations));
+						sourceRelations = new ArrayList<>();
+				}
+				previous = new MedicalAction(TermId.of(subject.get("id").asString()), subject.get("name").asString());
+			}
+			if (previous == null){
+				return Collections.emptyList();
+			}
+			medicalActions.add(new MedicalActionExtended(previous, sourceRelations));
+		}
+		return medicalActions;
 	}
 }
