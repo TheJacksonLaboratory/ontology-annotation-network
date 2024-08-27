@@ -1,12 +1,5 @@
 name: Deploy Data
-on:
-  workflow_dispatch:
-    inputs:
-      reload:
-        description: 'Data Reload'
-        default: true
-        required: true
-        type: boolean
+on: workflow_dispatch
 env:
   GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
   GCLOUD_REGION: us-east1
@@ -18,7 +11,6 @@ env:
   
 jobs:
   build:
-    if: ${{ inputs.reload == true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -70,50 +62,39 @@ jobs:
           gsutil -m rm -r gs://jax-robinson-ontology-annotation-network-data/data/
           gsutil -m cp -r ./neo4j/data/* gs://jax-robinson-ontology-annotation-network-data/data/
 
-  redeploy:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Authenticate to Google Cloud
-          uses: 'google-github-actions/auth@v1'
-          with:
-            credentials_json: '${{ secrets.GCLOUD_SA_KEY }}'
+      - name: Stop prod container, Swap disk to loader
+        id: swap1
+        run: |
+          # Stop the instance
+          gcloud compute instances stop ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
+          # Detach disk
+          gcloud compute instances detach-disk ontology-annotation-network-containerized --disk=graph-data --zone=us-east1-b
+          # Attach disk to loader
+          gcloud compute instances attach-disk ontology-annotation-loader --disk=graph-data --device-name=graph-data --zone=us-east1-b
+          # turn on loader
+          gcloud compute instances start ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b    
 
-        - name: Setup Google Cloud CLI
-          uses: 'google-github-actions/setup-gcloud@v1'
+      - name: Sleep for startup script time
+        run: sleep 15
 
-        - name: Stop prod container, Swap disk to loader
-          id: swap1
-          run: |
-            # Stop the instance
-            gcloud compute instances stop ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
-            # Detach disk
-            gcloud compute instances detach-disk ontology-annotation-network-containerized --disk=graph-data --zone=us-east1-b
-            # Attach disk to loader
-            gcloud compute instances attach-disk ontology-annotation-loader --disk=graph-data --device-name=graph-data --zone=us-east1-b
-            # turn on loader
-            gcloud compute instances start ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b    
+      - name: Stop loader container, Swap disk to prod
+        id: swap2
+        run: |
+          # turn off loader
+          gcloud compute instances stop ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
+          # detach disk
+          gcloud compute instances detach-disk ontology-annotation-loader --disk=graph-data --zone=us-east1-b
+          # re-attach disk
+          gcloud compute instances attach-disk ontology-annotation-network-containerized --device-name=graph-data --disk=graph-data --zone=us-east1-b
+          # turn on instance
+          gcloud compute instances start ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
 
-        - name: Sleep for startup script time
-          run: sleep 15
-
-        - name: Stop loader container, Swap disk to prod
-          id: swap2
-          run: |
-            # turn off loader
-            gcloud compute instances stop ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
-            # detach disk
-            gcloud compute instances detach-disk ontology-annotation-loader --disk=graph-data --zone=us-east1-b
-            # re-attach disk
-            gcloud compute instances attach-disk ontology-annotation-network-containerized --device-name=graph-data --disk=graph-data --zone=us-east1-b
-            # turn on instance
-            gcloud compute instances start ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
-
-        - name: Sleep for startup script time
-          run: sleep 30
-
-        - name: Redeploy Rest
-          run: |
-            gcloud run deploy ontology-annotation-network-rest --quiet \
-            --image "us-docker.pkg.dev/jax-cs-registry/docker/ontology/ontology-annotation-network-rest:latest" --project "${GCLOUD_PROJECT_ID}" \
-            --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
-            --memory 4Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
+#      - name: Sleep for startup script time
+#        run: sleep 30
+#
+#      - name: Redeploy Rest
+#        run: |
+#          gcloud run deploy ontology-annotation-network-rest --quiet \
+#          --image "us-docker.pkg.dev/jax-cs-registry/docker/ontology/ontology-annotation-network-rest:latest" --project "${GCLOUD_PROJECT_ID}" \
+#          --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
+#          --memory 4Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"

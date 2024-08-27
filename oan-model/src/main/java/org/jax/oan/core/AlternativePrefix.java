@@ -9,6 +9,6 @@ public class AlternativePrefix {
 		if (prefixMap.containsKey(prefix)){
 			return prefixMap.get(prefix);
 		}
-		return "NULL";
+		return prefix;
 	}
 }

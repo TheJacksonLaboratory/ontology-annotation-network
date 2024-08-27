@@ -18,7 +18,7 @@ wget -P $1 --no-use-server-timestamps https://raw.githubusercontent.com/monarch-
 wget -P $1 --no-use-server-timestamps  http://www.orphadata.org/data/xml/en_product6.xml
 
 # GENE INFO
-wget -P $1 --no-use-server-timestamps  http://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/tsv/hgnc_complete_set.txt
+wget -P $1 --no-use-server-timestamps  https://g-a8b222.dd271.03c0.data.globus.org/pub/databases/genenames/hgnc/tsv/hgnc_complete_set.txt
 
 # PHENOTYPE HPOA
 wget https://github.com/obophenotype/human-phenotype-ontology/releases/latest/download/phenotype.hpoa -O $1phenotype.hpoa
