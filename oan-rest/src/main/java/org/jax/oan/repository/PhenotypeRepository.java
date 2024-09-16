@@ -27,7 +27,7 @@ public class PhenotypeRepository {
 	public Collection<Disease> findDiseasesByTerm(TermId termId){
 		List<Disease> diseases = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} with nodes MATCH (d: Disease)-[:MANIFESTS]->(p: Phenotype)\n" +
+			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} with nodes MATCH (d: Disease)<-[:MANIFESTS]-(p: Phenotype)\n" +
 					"WHERE p.id IN nodes RETURN DISTINCT d", parameters("id", termId.getValue()));
 			while (result.hasNext()) {
 				Value value = result.next().get("d");
@@ -47,7 +47,7 @@ public class PhenotypeRepository {
 	public Collection<Gene> findGenesByTerm(TermId termId) {
 		List<Gene> genes = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} call { with nodes MATCH (d: Disease)-[:MANIFESTS]->(p: Phenotype)" +
+			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} call { with nodes MATCH (d: Disease)<-[:MANIFESTS]-(p: Phenotype)" +
 					" WHERE p.id IN nodes RETURN d as diseases} with diseases MATCH (diseases)-[:EXPRESSES]-(g: Gene) RETURN DISTINCT g", parameters("id", termId.getValue()));
 
 			while (result.hasNext()) {
@@ -83,29 +83,23 @@ public class PhenotypeRepository {
 	 * @param termId the termId of the phenotype
 	 * @return List of assays or empty list
 	 */
-	public Collection<MedicalActionExtended> findMedicalActionsByTerm(TermId termId){
-		Collection<MedicalActionExtended> medicalActions = new ArrayList<>();
+	public Collection<MedicalActionSourceExtended> findMedicalActionsByTerm(TermId termId){
+		Collection<MedicalActionSourceExtended> medicalActions = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (m: MedicalAction)-[c:CLARIFIES]->(p: Phenotype {id: $id})<-[:WITH_METADATA]-(mm:MedicalActionMetadata) RETURN DISTINCT m,mm,c ORDER BY elementId(m)", parameters("id", termId.getValue()));
-			List<SourceRelation> sourceRelations = new ArrayList<>();
-			MedicalAction previous = null;
+			Result result = tx.run("MATCH (p:Phenotype {id: $id})-[c:CLARIFIES]-(m:MedicalAction)<-[d:DESCRIBES]-(mm:MedicalActionAnnotation) WHERE d.pcontext = p.id return p, m, collect(distinct c.by) as t, collect(distinct mm) as mm", parameters("id", termId.getValue()));
+
 			while (result.hasNext()) {
+				List<MedicalActionRelation> relations = new ArrayList<>();
+				List<String> sources = new ArrayList<>();
 				Record record = result.next();
 				Value subject = record.get("m");
-				Value relation = record.get("c");
-				Value source = record.get("mm");
-				if(previous == null || Objects.equals(subject.get("id").asString(), previous.getId())){
-					sourceRelations.add(new SourceRelation(MedicalActionRelation.valueOf(relation.get("by").asString()), source.get("source").asString()));
-				} else {
-						medicalActions.add(new MedicalActionExtended(previous, sourceRelations));
-						sourceRelations = new ArrayList<>();
-				}
-				previous = new MedicalAction(TermId.of(subject.get("id").asString()), subject.get("name").asString());
+
+				record.get("mm").values().forEach(x -> sources.add(x.get("source").asString()));
+				record.get("t").values().forEach(t -> {
+					relations.add(MedicalActionRelation.valueOf(t.asString()));
+				});
+				medicalActions.add(new MedicalActionSourceExtended(TermId.of(subject.get("id").asString()), subject.get("name").asString(), relations, sources));
 			}
-			if (previous == null){
-				return Collections.emptyList();
-			}
-			medicalActions.add(new MedicalActionExtended(previous, sourceRelations));
 		}
 		return medicalActions;
 	}

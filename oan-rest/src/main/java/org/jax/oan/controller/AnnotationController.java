@@ -20,15 +20,16 @@ import org.monarchinitiative.phenol.ontology.data.TermId;
 @SerdeImport(Disease.class)
 @SerdeImport(Gene.class)
 @SerdeImport(Phenotype.class)
+@SerdeImport(PhenotypeExtended.class)
 @SerdeImport(PhenotypeMetadata.class)
 @SerdeImport(PhenotypeAnnotationDto.class)
 @SerdeImport(GeneAnnotationDto.class)
 @SerdeImport(DiseaseAnnotationDto.class)
 @SerdeImport(Assay.class)
 @SerdeImport(MedicalAction.class)
-@SerdeImport(MedicalActionExtended.class)
+@SerdeImport(MedicalActionSourceExtended.class)
+@SerdeImport(MedicalActionTargetExtended.class)
 @SerdeImport(SourceRelation.class)
-@SerdeImport
 public class AnnotationController {
 
 	private final PhenotypeService phenotypeService;

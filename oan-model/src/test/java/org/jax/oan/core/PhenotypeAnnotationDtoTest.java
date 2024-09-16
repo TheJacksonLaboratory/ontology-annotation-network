@@ -15,7 +15,7 @@ class PhenotypeAnnotationDtoTest {
 
 	@ParameterizedTest
 	@MethodSource
-	void create(Collection<Disease> diseases, Collection<Gene> genes, Collection<Assay> assays, Collection<MedicalActionExtended> medicalActions){
+	void create(Collection<Disease> diseases, Collection<Gene> genes, Collection<Assay> assays, Collection<MedicalActionSourceExtended> medicalActions){
 		PhenotypeAnnotationDto dto = new PhenotypeAnnotationDto(diseases, genes, assays, medicalActions);
 		assertEquals(dto.diseases(), diseases);
 		assertEquals(dto.genes(), genes);

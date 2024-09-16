@@ -50,7 +50,7 @@ class AnnotationControllerTest {
 	@Test
 	void positive_by_disease(RequestSpecification spec) throws OntologyAnnotationNetworkException {
 		when(diseaseService.findAll(TermId.of("OMIM:039293")))
-				.thenReturn(new DiseaseAnnotationDto(TestData.diseases().get(0), Map.of("limbs", phenotypes()), genes()));
+				.thenReturn(new DiseaseAnnotationDto(TestData.diseases().get(0), Map.of("limbs", phenotypesExtended()), genes(), List.of()));
 		spec.when().get("/api/network/annotation/OMIM:039293").then()
 				.statusCode(200).body("genes.id",
 						hasItems("NCBIGene:00093", "NCBIGene:02002"));

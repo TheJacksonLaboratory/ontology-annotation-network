@@ -43,7 +43,7 @@ class DownloadServiceTest {
 	@MethodSource
 	void associations_source(TermId id, SupportedEntity source, SupportedEntity target) {
 		when(diseaseRepository.findPhenotypesByDisease(id))
-				.thenReturn(TestData.phenotypes());
+				.thenReturn(TestData.phenotypesExtended());
 		when(diseaseRepository.findGenesByDisease(id))
 				.thenReturn(TestData.genes());
 		when(geneRepository.findPhenotypesByGene(id))

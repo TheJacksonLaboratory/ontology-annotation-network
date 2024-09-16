@@ -57,7 +57,7 @@ public class GeneRepository {
 			Result result = tx.run("MATCH (g: Gene {id: $id})-[:DETERMINES]-(p:Phenotype) RETURN p", parameters("id", termId.getValue()));
 			while (result.hasNext()) {
 				Value value = result.next().get("p");
-				Phenotype phenotype = new Phenotype(TermId.of(value.get("id").asString()), value.get("name").asString(), value.get("category").asString(), null);
+				Phenotype phenotype = new Phenotype(TermId.of(value.get("id").asString()), value.get("name").asString());
 				phenotypes.add(phenotype);
 			}
 		}

@@ -6,7 +6,6 @@ import org.jax.oan.repository.PhenotypeRepository;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
 import java.util.Collection;
-import java.util.List;
 
 @Singleton
 public class PhenotypeService {
@@ -21,7 +20,7 @@ public class PhenotypeService {
 		Collection<Disease> diseases = this.phenotypeRepository.findDiseasesByTerm(termId);
 		Collection<Gene> genes = this.phenotypeRepository.findGenesByTerm(termId);
 		Collection<Assay> assays = this.phenotypeRepository.findAssaysByTerm(termId);
-		Collection<MedicalActionExtended> medicalActions = this.phenotypeRepository.findMedicalActionsByTerm(termId);
+		Collection<MedicalActionSourceExtended> medicalActions = this.phenotypeRepository.findMedicalActionsByTerm(termId);
 		return new PhenotypeAnnotationDto(diseases, genes, assays, medicalActions);
 	}
 }

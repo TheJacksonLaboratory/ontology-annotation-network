@@ -2,10 +2,7 @@ package org.jax.oan.repository;
 
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
-import org.jax.oan.core.Disease;
-import org.jax.oan.core.Gene;
-import org.jax.oan.core.Phenotype;
-import org.jax.oan.core.PhenotypeMetadata;
+import org.jax.oan.core.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -62,9 +59,9 @@ class DiseaseRepositoryTest {
 
 	@Test
 	void findPhenotypesByDisease() {
-		Collection<Phenotype> phenotypes = diseaseRepository.findPhenotypesByDisease(TermId.of("OMIM:092320"));
-		List<Phenotype> expected = List.of(
-				new Phenotype(TermId.of("HP:000001"), "short stature", "", new PhenotypeMetadata("female", "", "1/1", List.of()))
+		Collection<PhenotypeExtended> phenotypes = diseaseRepository.findPhenotypesByDisease(TermId.of("OMIM:092320"));
+		List<PhenotypeExtended> expected = List.of(
+				new PhenotypeExtended(TermId.of("HP:000001"), "short stature", "", new PhenotypeMetadata("female", "", "1/1", List.of()))
 		);
 
 		assertTrue(phenotypes.containsAll(expected));

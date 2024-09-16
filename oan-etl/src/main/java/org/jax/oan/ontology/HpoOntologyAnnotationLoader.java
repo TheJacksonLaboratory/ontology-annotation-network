@@ -12,13 +12,12 @@ import org.monarchinitiative.phenol.annotations.formats.hpo.HpoOnset;
 import org.monarchinitiative.phenol.annotations.formats.hpo.category.HpoCategories;
 import org.monarchinitiative.phenol.annotations.formats.hpo.category.HpoCategoryLookup;
 import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
+import org.monarchinitiative.phenol.annotations.io.hpo.HpoAnnotationLine;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataLoader;
 import org.monarchinitiative.phenol.io.OntologyLoader;
 import org.monarchinitiative.phenol.ontology.data.*;
 import org.neo4j.driver.Query;
-import org.neo4j.driver.Result;
-import org.neo4j.driver.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +26,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.Predicate;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.neo4j.driver.Values.parameters;
@@ -63,7 +62,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	public void load(Path hpoDataDirectory, Set<DiseaseDatabase> databases) throws IOException, OntologyAnnotationNetworkException {
 		final HpoDataResolver dataResolver = HpoDataResolver.of(hpoDataDirectory);
 		final Ontology hpoOntology = OntologyLoader.loadOntology(dataResolver.hpJson().toFile());
-		final Ontology mondoOntology = OntologyLoader.loadOntology(dataResolver.mondoJson().toFile());
+		final Ontology mondoOntology = OntologyLoader.loadOntology(dataResolver.mondoJson().toFile(), "MONDO");
 		final HpoaDiseaseDataContainer diseases = HpoaDiseaseDataLoader.of(databases).loadDiseaseData(dataResolver.phenotypeAnnotations());
 		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).orphaToGenePath(dataResolver.orpha2Gene()).mim2GeneMedgen(dataResolver.mim2geneMedgen())
 				.hpoDiseases(diseases).hgncCompleteSetArchive(dataResolver.hgncCompleteSet()).build();
@@ -190,29 +189,26 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	void diseaseToPhenotype(HpoaDiseaseDataContainer diseases, Ontology ontology){
 			logger.info("Loading Disease to Phenotype Relationships...");
 			ArrayList<Query> queries = new ArrayList<>(Collections.emptyList());
-			diseases.diseaseData().stream().flatMap(d -> d.annotationLines().stream()).forEach(line -> {
+			Set<HpoAnnotationLine> lines = diseases.diseaseData().stream().flatMap(d -> d.annotationLines().stream()).collect(Collectors.toSet());
+			for (HpoAnnotationLine line: lines) {
 				String onset = line.onset().map(HpoOnset::id).map(TermId::getValue).orElse("");
 				String frequency = formatFrequency(line.frequency(), ontology);
 				String sources = formatSources(line.annotationReferences());
-				String sex;
+				String sex = "";
 				if (line.sex() != null) {
 					sex = line.sex().toString();
-				} else {
-					sex = "";
 				}
 				Query query = new Query("MATCH (d:Disease {id: $diseaseId}), (p:Phenotype {id: $phenotypeId})" +
-								" MERGE (d)-[:MANIFESTS]->(p)<-[:WITH_METADATA {context: $diseaseId}]-(pm: PhenotypeMetadata {onset: $onset, frequency: $frequency, sex: $sex," +
-								"sources: $sources})",
+						"WITH d,p MERGE (pa: PhenotypeAnnotation {onset: $onset, frequency: $frequency, sex: $sex, sources: $source}) " +
+						"WITH d,p,pa MERGE (pa)-[:DESCRIBES {context: $diseaseId}]->(p) " +
+						"WITH p,d MERGE (p)-[:MANIFESTS]->(d)",
 						parameters(
 								"diseaseId", line.diseaseId().toString(),
 								"phenotypeId", line.phenotypeTermId().getValue(),
-								"onset", onset, "frequency", frequency, "sex", sex,
-								"sources", sources
-						)
-				);
+								"onset", onset, "frequency", frequency, "sex", sex, "source", sources));
 				queries.add(query);
-			});
-			graphWriter().write(queries);
+			}
+			graphWriter.write(queries);
 			logger.info("Done.");
 	}
 
@@ -232,6 +228,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 
 	void medicalAction(Path maxoa){
 		logger.info("Loading Medical Action Relationships...");
+		final TermId root = TermId.of("HP:0000118");
 		ArrayList<Query> queries = new ArrayList<>(Collections.emptyList());
 		try (BufferedReader reader = new BufferedReader(new FileReader(maxoa.toFile()))) {
 			queries.clear();
@@ -244,27 +241,31 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 				TermId phenotype = TermId.of(fields[5]);
 				MedicalActionMetadata meta;
 				Query connectMedicalAction;
-				Query createChemicalExtension;
-				Query createMedicalAction = new Query("MERGE (a:MedicalAction {id: $id, name: $name})",
+				Query createMedicalAction = new Query("MERGE (m:MedicalAction {id: $id}) ON CREATE SET m.name = $name",
 						parameters("id", fields[3], "name",fields[4]));
+
+				if (phenotype.getPrefix().contains("MONDO")){
+					phenotype = root;
+				}
 
 				if (!fields[8].isEmpty()){
 					 meta = new MedicalActionMetadata(fields[2], Evidence.valueOf(fields[7]), new Extension(TermId.of(fields[8]), fields[9]), MedicalActionRelation.valueOf(fields[6]), fields[12]);
-					 createChemicalExtension = new Query("MERGE (c:ChemicalExtension {id: $extensionId, name: $extensionName})", parameters("extensionId", meta.extension().getId(), "extensionName", meta.extension().getName()));
-					 connectMedicalAction = new Query("MATCH (p:Phenotype {id: $phenotypeId}), (m:MedicalAction {id: $medicalAction}), (d:Disease {mondoId: $diseaseId}), (c:ChemicalExtension {id: $extensionId})  WHERE d.id IS NOT NULL WITH p,m,d,c  " +
-							"MERGE (m)-[:CLARIFIES {by:$relation}]->(p) MERGE (mm:MedicalActionMetadata {source: $sourceId, evidence: $evidenceCode, author: $author}) WITH mm, p, d, c MERGE (p)<-[:WITH_METADATA {context: d.id}]-(mm)-[:EXTENDS]->(c)",
+					connectMedicalAction = new Query("MATCH (d:Disease {mondoId: $diseaseId}), (p:Phenotype {id: $phenotypeId}), (m:MedicalAction {id: $medicalAction}) WHERE d.id IS NOT NULL and d.id contains 'OMIM' " +
+							"WITH d,p,m MERGE (mm: MedicalActionAnnotation {evidence: $evidenceCode, author: $author, source: $sourceId, extensionId: $extensionId, extensionName: $extensionName})" +
+							"WITH d,p,mm,m MERGE (mm)-[:DESCRIBES {dcontext: d.id, pcontext: p.id }]->(m) " +
+							"WITH m,p,d MERGE (m)-[:CLARIFIES {by:$relation, context: d.id}]->(p)",
 							parameters("medicalAction", fields[3], "diseaseId", mondo.getValue(), "phenotypeId", phenotype.getValue(),
-									"relation", meta.medicalActionRelation().toString(), "sourceId", meta.sourceId(), "evidenceCode", meta.evidence().toString(), "extensionId", meta.extension().getId(), "author", meta.author()));
-					queries.add(createChemicalExtension);
+									"relation", meta.medicalActionRelation().toString(), "sourceId", meta.sourceId(), "evidenceCode", meta.evidence().toString(), "author", meta.author(), "extensionId", meta.extension().getId(), "extensionName", meta.extension().getName()));
 				} else {
 					 meta = new MedicalActionMetadata(fields[2], Evidence.valueOf(fields[7]), null, MedicalActionRelation.valueOf(fields[6]), fields[12]);
-					 connectMedicalAction = new Query("MATCH (p:Phenotype {id: $phenotypeId}), (m:MedicalAction {id: $medicalAction}), (d:Disease {mondoId: $diseaseId}) WHERE d.id IS NOT NULL WITH p,m,d " +
-							"MERGE (m)-[:CLARIFIES {by:$relation}]->(p) MERGE (mm:MedicalActionMetadata {source: $sourceId, evidence: $evidenceCode, author: $author}) WITH mm, p, d MERGE (p)<-[:WITH_METADATA {context: d.id}]-(mm)",
-							parameters("medicalAction", fields[3], "diseaseId", mondo.getValue(), "phenotypeId", phenotype.getValue(),
-									"relation", meta.medicalActionRelation().toString(), "sourceId", meta.sourceId(), "evidenceCode", meta.evidence().toString(), "author", meta.author()));
+					 connectMedicalAction = new Query("MATCH (d:Disease {mondoId: $diseaseId}), (p:Phenotype {id: $phenotypeId}), (m:MedicalAction {id: $medicalAction}) WHERE d.id IS NOT NULL and d.id contains 'OMIM' " +
+							 "WITH d,p,m MERGE (mm: MedicalActionAnnotation {evidence: $evidenceCode, author: $author, source: $sourceId, extensionId: $extensionId, extensionName: $extensionName})" +
+							 "WITH d,p,mm,m MERGE (mm)-[:DESCRIBES {dcontext: d.id, pcontext: p.id }]->(m) " +
+							 "WITH m,p,d MERGE (m)-[:CLARIFIES {by:$relation, context: d.id}]->(p)",
+							 parameters("medicalAction", fields[3], "diseaseId", mondo.getValue(), "phenotypeId", phenotype.getValue(),
+									 "relation", meta.medicalActionRelation().toString(), "sourceId", meta.sourceId(), "evidenceCode", meta.evidence().toString(), "author", meta.author(), "extensionId", "", "extensionName", ""));
 
 				}
-
 				queries.add(createMedicalAction);
 				queries.add(connectMedicalAction);
 			}

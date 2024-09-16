@@ -35,6 +35,7 @@ public class GraphDatabaseOperations implements GraphOperations {
 			logger.info("Creating Indexes...");
 			queries.add(new Query("CREATE INDEX phenotype_id FOR (n:Phenotype) ON (n.id)"));
 			queries.add(new Query("CREATE INDEX disease_id FOR (n:Disease) ON (n.id)"));
+			queries.add(new Query("CREATE INDEX p_annotation_id FOR (n:PhenotypeAnnotation) ON (n.onset, n.frequency, n.sex, n.sources)"));
 			queries.add(new Query("CREATE INDEX gene_id FOR (n:Gene) ON (n.id)"));
 			queries.add(new Query("CREATE INDEX assay_id FOR (n:Assay) ON (n.id)"));
 			graphWriter().write(queries);

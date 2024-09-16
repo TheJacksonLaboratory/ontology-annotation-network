@@ -1,10 +1,7 @@
 package org.jax.oan.repository;
 
 import jakarta.inject.Singleton;
-import org.jax.oan.core.Disease;
-import org.jax.oan.core.Gene;
-import org.jax.oan.core.Phenotype;
-import org.jax.oan.core.PhenotypeMetadata;
+import org.jax.oan.core.*;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
@@ -87,19 +84,52 @@ public class DiseaseRepository {
 	 * @param termId the termId of the disease
 	 * @return List of diseases or empty list
 	 */
-	public Collection<Phenotype> findPhenotypesByDisease(TermId termId){
-		Collection<Phenotype> phenotypes = new ArrayList<>();
+	public Collection<PhenotypeExtended> findPhenotypesByDisease(TermId termId){
+		Collection<PhenotypeExtended> phenotypes = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (d: Disease {id: $id})-[:MANIFESTS]-(p: Phenotype)-[:WITH_METADATA {context: $id }]-(pm: PhenotypeMetadata) RETURN p, pm", parameters("id", termId.getValue()));
+			Result result = tx.run("MATCH (d: Disease {id: $id})<-[:MANIFESTS]-(p: Phenotype)-[:DESCRIBES {context: $id }]-(pm: PhenotypeAnnotation) RETURN p, pm", parameters("id", termId.getValue()));
 			while (result.hasNext()) {
 				Record r = result.next();
 				Value p = r.get("p");
 				Value pm = r.get("pm");
 				PhenotypeMetadata phenotypeMetadata = new PhenotypeMetadata(pm.get("sex").asString(), pm.get("onset").asString(), pm.get("frequency").asString(), Arrays.stream(pm.get("sources").asString().split(";")).filter(Predicate.not(String::isBlank)).collect(Collectors.toList()));
-				Phenotype phenotype = new Phenotype(TermId.of(p.get("id").asString()), p.get("name").asString(), p.get("category").asString(), phenotypeMetadata);
+				PhenotypeExtended phenotype = new PhenotypeExtended(TermId.of(p.get("id").asString()), p.get("name").asString(), p.get("category").asString(), phenotypeMetadata);
 				phenotypes.add(phenotype);
 			}
 		}
 		return phenotypes;
+	}
+
+	/**
+	 * Give me all the medical actions for a disease with the phenotypes (or diseases) they clarify.
+	 * @param termId the termId of the disease
+	 * @return List of diseases or empty list
+	 */
+	public Collection<MedicalActionTargetExtended> findMedicalActionsByDisease(TermId termId){
+		Collection<MedicalActionTargetExtended> actions = new ArrayList<>();
+		try (Transaction tx = driver.session().beginTransaction()) {
+			Result result = tx.run("MATCH (p: Phenotype)-[c:CLARIFIES {context: $id}]-(m: MedicalAction) RETURN m, collect(distinct p) as p, collect(distinct c.by) as c", parameters("id", termId.getValue()));
+			while (result.hasNext()) {
+				List<OntologyEntity> targets = new ArrayList<>();
+				List<MedicalActionRelation> relations = new ArrayList<>();
+				Record r = result.next();
+				Value m = r.get("m");
+
+				// The root node of hpo serves as a way to annotate to the disease being referenced
+				// instead of a phenotype of the disease. We should map back before we return it.
+				r.get("p").values().forEach(t -> {
+					if (t.get("id").asString().contains("HP:0000118")){
+						targets.add(new Phenotype(termId, t.get("name").asString()));
+					} else {
+						targets.add(new Phenotype(TermId.of(t.get("id").asString()), t.get("name").asString()));
+					}
+				});
+				r.get("c").values().forEach(t -> {
+					relations.add(MedicalActionRelation.valueOf(t.asString()));
+				});
+				actions.add(new MedicalActionTargetExtended(TermId.of(m.get("id").asString()), m.get("name").asString(), relations, targets ));
+			}
+		}
+		return actions;
 	}
 }
