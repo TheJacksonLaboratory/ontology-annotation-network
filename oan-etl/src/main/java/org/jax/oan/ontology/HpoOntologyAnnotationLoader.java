@@ -26,7 +26,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.neo4j.driver.Values.parameters;
@@ -50,9 +49,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	}
 
 	/**
-	 * Load Neo4J Graph with hpo data. The graph has nodes: Disease, Phenotype, Gene, Assay, Medical Action and
-	 * edges Disease - Manifest - Phenotype - Metadata (with disease id) - PhenotypeMetadata,
-	 * Disease - Expresses - Gene, Assay - Measures - Phenotype,
+	 * Load Neo4J Graph with hpo data.
 	 *
 	 * @param hpoDataDirectory the directory for hpo graph.
 	 * @throws IOException if a file can't be found
@@ -67,11 +64,11 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).orphaToGenePath(dataResolver.orpha2Gene()).mim2GeneMedgen(dataResolver.mim2geneMedgen())
 				.hpoDiseases(diseases).hgncCompleteSetArchive(dataResolver.hgncCompleteSet()).build();
 		graphDatabaseOperations.dropIndexes(OntologyModule.HPO);
+		graphDatabaseOperations.createIndexes(OntologyModule.HPO);
 		Map<TermId, String> categories = phenotypeToCategory(hpoOntology);
 		phenotypes(hpoOntology.getTerms(), categories);
 		diseases(diseases, mondoOntology.getTerms());
 		genes(associations);
-		graphDatabaseOperations.createIndexes(OntologyModule.HPO);
 		phenotypeToPhenotype(hpoOntology.getTerms(), hpoOntology);
 		diseaseToPhenotype(diseases, hpoOntology);
 		geneToPhenotype(associations);

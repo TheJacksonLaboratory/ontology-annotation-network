@@ -36,7 +36,7 @@ class PhenotypeRepositoryTest {
 			tx.run("CREATE (g:Gene {id: 'NCBIGene:7777', name: 'MNN'})");
 			tx.run("CREATE (a:Assay {id: '03923', name: 'Glucose in blood'})");
 			tx.run("MATCH (d:Disease {id: 'OMIM:092320'}), (p:Phenotype {id: 'HP:000001'})" +
-					"MERGE (d)-[:MANIFESTS]->(p)<-[:WITH_METADATA {context: 'OMIM:092320'}]-(pm: PhenotypeMetadata {onset: '', frequency: '1/1', sex: 'female'," +
+					"MERGE (d)<-[:MANIFESTS]-(p)<-[:DESCRIBES {context: 'OMIM:092320'}]-(pm: PhenotypeAnnotation {onset: '', frequency: '1/1', sex: 'female'," +
 					"sources: '' })");
 			tx.run("MATCH (d:Disease {id: 'OMIM:092320'}), (g:Gene {id: 'NCBIGene:7777'}) " +
 					"MERGE (d)-[:EXPRESSES]->(g)");

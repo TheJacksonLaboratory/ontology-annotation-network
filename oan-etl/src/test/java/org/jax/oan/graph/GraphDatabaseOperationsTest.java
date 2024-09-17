@@ -38,11 +38,9 @@ class GraphDatabaseOperationsTest {
 	@Test
 	void createAndDropIndexes() {
 		try (Session session = graphDatabaseWriter.session()){
-			session.executeWriteWithoutResult(tx ->
-					tx.run("CREATE (p: Phenotype {id: 'HP:000001'}),(d: Disease {id: 'OMIM:1000'}),(g: Gene {id: 'NCBIGene:30'}),(a: Assay {id: 'LOINC:09103-3'})"));
 			graphDatabaseOperations.createIndexes(OntologyModule.HPO);
 			List<Record> indexes = session.executeWrite(tx -> tx.run("SHOW INDEXES YIELD name, labelsOrTypes, properties, type").list()).stream().filter(r -> r.get("type").asString().equals("RANGE")).collect(Collectors.toList());
-			assertEquals(4, indexes.size());
+			assertEquals(5, indexes.size());
 			graphDatabaseOperations.dropIndexes(OntologyModule.HPO);
 			indexes = session.executeWrite(tx -> tx.run("SHOW INDEXES YIELD name, labelsOrTypes, properties, type").list()).stream().filter(r -> r.get("type").asString().equals("RANGE")).collect(Collectors.toList());;
 			assertEquals(0, indexes.size());

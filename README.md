@@ -61,3 +61,9 @@ Testing
 ```
      ./mvnw clean test -pl oan-rest -am
 ```
+
+Test Reporting
+
+```
+    ./mvnw jacoco:report
+```

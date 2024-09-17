@@ -1,16 +1,15 @@
 package org.jax.oan.ontology;
 
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import org.jax.oan.exception.OntologyAnnotationNetworkDataException;
+import jakarta.inject.Inject;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.graph.GraphDatabaseOperations;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.monarchinitiative.phenol.annotations.formats.AnnotationReference;
 import org.monarchinitiative.phenol.annotations.formats.EvidenceCode;
-import org.monarchinitiative.phenol.annotations.formats.hpo.HpoAssociationData;
 import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
-import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
-import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataLoader;
 import org.monarchinitiative.phenol.io.OntologyLoader;
 import org.monarchinitiative.phenol.ontology.data.*;
 import org.neo4j.driver.Driver;
@@ -24,42 +23,26 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @MicronautTest(environments = "test")
 class HpoOntologyAnnotationLoaderTest {
 
-	final HpoOntologyAnnotationLoader graphLoader;
+	HpoOntologyAnnotationLoader graphLoader;
 
-	final GraphDatabaseOperations graphDatabaseOperations;
+	GraphDatabaseOperations graphDatabaseOperations;
 
-	final Driver driver;
+	@Inject
+	Driver driver;
 
 	Ontology hpoOntology;
 
-
-	public HpoOntologyAnnotationLoaderTest(Driver driver) throws IOException, OntologyAnnotationNetworkException {
-		this.driver = driver;
-		final GraphDatabaseWriter graphDatabaseWriter = new GraphDatabaseWriter(driver);
+	@BeforeAll
+	void setup() throws OntologyAnnotationNetworkException, IOException {
+		final GraphDatabaseWriter graphDatabaseWriter = new GraphDatabaseWriter(this.driver);
 		this.graphLoader = new HpoOntologyAnnotationLoader(graphDatabaseWriter);
 		this.graphDatabaseOperations = new GraphDatabaseOperations(graphDatabaseWriter);
-		HpoDataResolver hpoDataResolver = HpoDataResolver.of(Path.of("src/test/resources"));
-		this.hpoOntology = OntologyLoader.loadOntology(hpoDataResolver.hpJson().toFile());
-		Ontology mondoOntology = OntologyLoader.loadOntology(hpoDataResolver.mondoJson().toFile());
-		final HpoaDiseaseDataContainer container = HpoaDiseaseDataLoader.of(Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET)).loadDiseaseData(hpoDataResolver.phenotypeAnnotations());
-		final HpoAssociationData associations = HpoAssociationData.builder(this.hpoOntology).mim2GeneMedgen(hpoDataResolver.mim2geneMedgen())
-				.hpoDiseases(container).hgncCompleteSetArchive(hpoDataResolver.hgncCompleteSet()).build();
-		graphDatabaseWriter.truncate();
-		configureGraph(associations, container, this.hpoOntology, mondoOntology, hpoDataResolver.loinc());
-	}
-
-	void configureGraph(HpoAssociationData associations,
-						HpoaDiseaseDataContainer container, Ontology hpoOntology, Ontology mondoOntology,
-						Path loincPath) throws OntologyAnnotationNetworkDataException {
-		graphLoader.phenotypes(hpoOntology.getTerms(), Map.of());
-		graphLoader.diseases(container, mondoOntology.getTerms());
-		graphLoader.diseaseToPhenotype(container, hpoOntology);
-		graphLoader.genes(associations);
-		graphLoader.diseaseToGene(associations);
-		graphLoader.assayToPhenotype(loincPath);
+		graphLoader.load(Path.of("src/test/resources"), Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET));
+		this.hpoOntology = OntologyLoader.loadOntology(Path.of("src/test/resources/hp-simple-non-classified.json").toFile());
 	}
 
 	@Test
@@ -126,16 +109,30 @@ class HpoOntologyAnnotationLoaderTest {
 	void diseaseToPhenotype() {
 		try(Session session = driver.session()) {
 			List<Node> allAnnotations = session.run("MATCH " +
-							"(n: Disease)-[:MANIFESTS]-(p: Phenotype)-[:WITH_METADATA]-(pm:PhenotypeMetadata) RETURN DISTINCT pm")
+							"(n: Disease)<-[:MANIFESTS]-(p: Phenotype)<-[:DESCRIBES {context: n.id}]-(pm: PhenotypeAnnotation) RETURN pm")
 					.list(record -> record.get("pm").asNode());
 			List<Node> filteredAnnotations = session.run("MATCH " +
-							"(n: Disease {id: 'OMIM:609153'})-[:MANIFESTS]-(p: Phenotype)-[:WITH_METADATA {context: n.id}]-(pm: PhenotypeMetadata) RETURN DISTINCT pm")
+							"(n: Disease {id: 'OMIM:609153'})<-[:MANIFESTS]-(p: Phenotype)<-[:DESCRIBES {context: n.id}]-(pm: PhenotypeAnnotation) RETURN pm")
 					.list(record -> record.get("pm").asNode());
 
 			assertEquals(5, allAnnotations.size());
 			assertEquals(3, filteredAnnotations.size());
 		}
+	}
 
+	@Test
+	void medicalActions(){
+		try(Session session = driver.session()) {
+			List<Node> allAnnotations = session.run("MATCH " +
+							"(n: Disease)<-[:MANIFESTS]-(p: Phenotype)<-[:DESCRIBES {context: n.id}]-(pm: PhenotypeAnnotation) RETURN pm")
+					.list(record -> record.get("pm").asNode());
+			List<Node> filteredAnnotations = session.run("MATCH " +
+							"(n: Disease {id: 'OMIM:609153'})<-[:MANIFESTS]-(p: Phenotype)<-[:DESCRIBES {context: n.id}]-(pm: PhenotypeAnnotation) RETURN pm")
+					.list(record -> record.get("pm").asNode());
+
+			assertEquals(5, allAnnotations.size());
+			assertEquals(3, filteredAnnotations.size());
+		}
 	}
 
 
@@ -217,4 +214,5 @@ class HpoOntologyAnnotationLoaderTest {
 		assertTrue((pc.containsKey(TermId.of("HP:0000001"))));
 		assertEquals(pc.get(TermId.of("HP:0000001")), "Other");
 	}
+
 }
