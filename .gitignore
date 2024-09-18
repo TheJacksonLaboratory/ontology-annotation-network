@@ -15,5 +15,6 @@ out/
 .factorypath
 oan-etl/data/
 !oan-etl/data/loinc2hpo-annotations-merged.tsv
+!oan-etl/data/maxo-annotations.tsv
 oan-rest/dependency-reduced-pom.xml
 oan-etl/dependency-reduced-pom.xml
