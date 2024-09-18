@@ -34,6 +34,16 @@ class DiseaseRepositoryTest {
 			tx.run("CREATE (p: Phenotype {id: 'HP:000001', name: 'short stature', category: ''})");
 			tx.run("CREATE (g:Gene {id: 'NCBIGene:9999', name: 'TX2'})");
 			tx.run("CREATE (g:Gene {id: 'NCBIGene:7777', name: 'MNN'})");
+			tx.run("CREATE (m:MedicalAction {id: 'MAXO:0001001', name: 'gene therapy'})");
+			tx.run("CREATE (m:MedicalAction {id: 'MAXO:0030018', name: 'uncooked cornstarch supplementation'})");
+			tx.run("MATCH (d:Disease {id: 'OMIM:555555'}), (p:Phenotype {id: 'HP:000001'}), (m:MedicalAction {id: 'MAXO:0001001'}) with d, p, m" +
+					" MERGE (mm: MedicalActionAnnotation {evidence: 'TAS', author: 'fake author', source: 'PMID:99999', extensionId: '', extensionName: ''})" +
+					" with d, p, mm, m MERGE (mm)-[:DESCRIBES {dcontext: d.id, pcontext: p.id }]->(m)" +
+					" with d, p, mm, m MERGE (m)-[:CLARIFIES {by: 'TREATS', context: d.id}]->(p)");
+			tx.run("MATCH (d:Disease {id: 'OMIM:555555'}), (p:Phenotype {id: 'HP:000001'}), (m:MedicalAction {id: 'MAXO:0030018'}) with d, p, m" +
+					" MERGE (mm: MedicalActionAnnotation {evidence: 'TAS', author: 'fake authors', source: 'PMID:99999', extensionId: '', extensionName: ''})" +
+					" with d, p, mm, m MERGE (mm)-[:DESCRIBES {dcontext: d.id, pcontext: p.id }]->(m)" +
+					" with d, p, mm, m MERGE (m)-[:CLARIFIES {by: 'TREATS', context: d.id}]->(p)");
 			tx.run("MATCH (d:Disease {id: 'OMIM:092320'}), (p:Phenotype {id: 'HP:000001'})" +
 					"MERGE (d)<-[:MANIFESTS]-(p)<-[:DESCRIBES {context: 'OMIM:092320'}]-(pm: PhenotypeAnnotation {onset: '', frequency: '1/1', sex: 'female'," +
 					"sources: '' })");
@@ -85,5 +95,11 @@ class DiseaseRepositoryTest {
 
 		assertTrue(disease.isPresent());
 		assertEquals(disease.get(), expected);
+	}
+
+	@Test
+	void findMedicalActionsByDisease(){
+		Collection<MedicalActionTargetExtended> mse = diseaseRepository.findMedicalActionsByDisease(TermId.of("OMIM:555555"));
+		assertEquals(2, mse.size());
 	}
 }
