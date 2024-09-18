@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 
 import static org.jax.oan.TestData.*;
@@ -49,7 +50,7 @@ class AnnotationControllerTest {
 	@Test
 	void positive_by_disease(RequestSpecification spec) throws OntologyAnnotationNetworkException {
 		when(diseaseService.findAll(TermId.of("OMIM:039293")))
-				.thenReturn(new DiseaseAnnotationDto(TestData.diseases().get(0), Map.of("limbs", phenotypes()), genes()));
+				.thenReturn(new DiseaseAnnotationDto(TestData.diseases().get(0), Map.of("limbs", phenotypesExtended()), genes(), List.of()));
 		spec.when().get("/api/network/annotation/OMIM:039293").then()
 				.statusCode(200).body("genes.id",
 						hasItems("NCBIGene:00093", "NCBIGene:02002"));
@@ -58,7 +59,7 @@ class AnnotationControllerTest {
 	@Test
 	void positive_by_phenotype(RequestSpecification spec) {
 		when(phenotypeService.findAll(TermId.of("HP:0000001")))
-				.thenReturn(new PhenotypeAnnotationDto(diseases(), genes(), assays()));
+				.thenReturn(new PhenotypeAnnotationDto(diseases(), genes(), assays(), List.of()));
 		spec.when().get("/api/network/annotation/HP:0000001").then()
 				.statusCode(200)
 				.body("diseases.id", hasItems("MONDO:099233", "DECIPHER:434444"))

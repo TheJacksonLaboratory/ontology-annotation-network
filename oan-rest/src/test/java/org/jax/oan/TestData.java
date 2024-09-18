@@ -1,9 +1,6 @@
 package org.jax.oan;
 
-import org.jax.oan.core.Assay;
-import org.jax.oan.core.Disease;
-import org.jax.oan.core.Gene;
-import org.jax.oan.core.Phenotype;
+import org.jax.oan.core.*;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
 import java.util.List;
@@ -16,10 +13,17 @@ public class TestData {
 		);
 	}
 
+	public static List<PhenotypeExtended> phenotypesExtended(){
+		return List.of(
+				new PhenotypeExtended(TermId.of("HP:099233"),"Long legs", null, null),
+				new PhenotypeExtended(TermId.of("HP:434444"),"Big bicep small arm", null, null)
+		);
+	}
+
 	public static List<Phenotype> phenotypes(){
 		return List.of(
-				new Phenotype(TermId.of("HP:099233"),"Long legs", null, null),
-				new Phenotype(TermId.of("HP:434444"),"Big bicep small arm", null, null)
+				new Phenotype(TermId.of("HP:099233"),"Long legs"),
+				new Phenotype(TermId.of("HP:434444"),"Big bicep small arm")
 		);
 	}
 

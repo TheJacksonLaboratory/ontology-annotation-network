@@ -53,7 +53,7 @@ class GeneRepositoryTest {
 	void findPhenotypesByGene() {
 		Collection<Phenotype> phenotypes = this.geneRepository.findPhenotypesByGene(TermId.of("NCBIGene:9999"));
 		Collection<Phenotype> expected = List.of(
-				new Phenotype(TermId.of("HP:000001"), "short stature", "", null)
+				new Phenotype(TermId.of("HP:000001"), "short stature")
 		);
 		assertTrue(phenotypes.containsAll(expected));
 	}

@@ -25,15 +25,16 @@ public class DiseaseService {
 
 	public DiseaseAnnotationDto findAll(TermId termId) throws OntologyAnnotationNetworkException {
 		Optional<Disease> disease = this.diseaseRepository.findDiseaseById(termId);
-		Collection<Phenotype> phenotypes = this.diseaseRepository.findPhenotypesByDisease(termId);
+		Collection<PhenotypeExtended> phenotypes = this.diseaseRepository.findPhenotypesByDisease(termId);
 		Collection<Gene> genes = this.diseaseRepository.findGenesByDisease(termId);
+		Collection<MedicalActionTargetExtended> medicalActions = this.diseaseRepository.findMedicalActionsByDisease(termId);
 		if(disease.isPresent()){
 			return new DiseaseAnnotationDto(
 					disease.get(),
 					phenotypes.stream().filter(p -> p.getCategory().isPresent()).collect(Collectors.groupingBy(
 							p -> p.getCategory().orElse("UNKNOWN")
 					)),
-					genes);
+					genes, medicalActions);
 		}
 		throw new OntologyAnnotationNetworkException(String.format("Could not find disease with id %s", termId.getValue()));
 	}

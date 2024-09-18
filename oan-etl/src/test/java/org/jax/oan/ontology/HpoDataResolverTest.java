@@ -19,6 +19,7 @@ class HpoDataResolverTest {
 		assertEquals(dataResolver.hgncCompleteSet(), dataDirectory.resolve("hgnc_complete_set.txt"));
 		assertEquals(dataResolver.phenotypeAnnotations(), dataDirectory.resolve("phenotype.hpoa"));
 		assertEquals(dataResolver.loinc(), dataDirectory.resolve("loinc2hpo-annotations-merged.tsv"));
+		assertEquals(dataResolver.maxoa(), dataDirectory.resolve("maxo-annotations.tsv"));
 		assertEquals(dataDirectory, dataResolver.dataDirectory());
 	}
 

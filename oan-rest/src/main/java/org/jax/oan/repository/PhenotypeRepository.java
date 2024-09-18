@@ -1,15 +1,12 @@
 package org.jax.oan.repository;
 
 import jakarta.inject.Singleton;
-import org.jax.oan.core.Assay;
-import org.jax.oan.core.Disease;
-import org.jax.oan.core.Gene;
+import org.jax.oan.core.*;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 import org.neo4j.driver.*;
+import org.neo4j.driver.Record;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import static org.neo4j.driver.Values.parameters;
 
@@ -30,7 +27,7 @@ public class PhenotypeRepository {
 	public Collection<Disease> findDiseasesByTerm(TermId termId){
 		List<Disease> diseases = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} with nodes MATCH (d: Disease)-[:MANIFESTS]->(p: Phenotype)\n" +
+			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} with nodes MATCH (d: Disease)<-[:MANIFESTS]-(p: Phenotype)\n" +
 					"WHERE p.id IN nodes RETURN DISTINCT d", parameters("id", termId.getValue()));
 			while (result.hasNext()) {
 				Value value = result.next().get("d");
@@ -50,7 +47,7 @@ public class PhenotypeRepository {
 	public Collection<Gene> findGenesByTerm(TermId termId) {
 		List<Gene> genes = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} call { with nodes MATCH (d: Disease)-[:MANIFESTS]->(p: Phenotype)" +
+			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} call { with nodes MATCH (d: Disease)<-[:MANIFESTS]-(p: Phenotype)" +
 					" WHERE p.id IN nodes RETURN d as diseases} with diseases MATCH (diseases)-[:EXPRESSES]-(g: Gene) RETURN DISTINCT g", parameters("id", termId.getValue()));
 
 			while (result.hasNext()) {
@@ -79,5 +76,31 @@ public class PhenotypeRepository {
 			}
 		}
 		return assays;
+	}
+
+	/**
+	 * Give me all the assays that measure this phenotype.
+	 * @param termId the termId of the phenotype
+	 * @return List of assays or empty list
+	 */
+	public Collection<MedicalActionSourceExtended> findMedicalActionsByTerm(TermId termId){
+		Collection<MedicalActionSourceExtended> medicalActions = new ArrayList<>();
+		try (Transaction tx = driver.session().beginTransaction()) {
+			Result result = tx.run("MATCH (p:Phenotype {id: $id})-[c:CLARIFIES]-(m:MedicalAction)<-[d:DESCRIBES]-(mm:MedicalActionAnnotation) WHERE d.pcontext = p.id return p, m, collect(distinct c.by) as t, collect(distinct mm) as mm", parameters("id", termId.getValue()));
+
+			while (result.hasNext()) {
+				List<MedicalActionRelation> relations = new ArrayList<>();
+				List<String> sources = new ArrayList<>();
+				Record record = result.next();
+				Value subject = record.get("m");
+
+				record.get("mm").values().forEach(x -> sources.add(x.get("source").asString()));
+				record.get("t").values().forEach(t -> {
+					relations.add(MedicalActionRelation.valueOf(t.asString()));
+				});
+				medicalActions.add(new MedicalActionSourceExtended(TermId.of(subject.get("id").asString()), subject.get("name").asString(), relations, sources));
+			}
+		}
+		return medicalActions;
 	}
 }

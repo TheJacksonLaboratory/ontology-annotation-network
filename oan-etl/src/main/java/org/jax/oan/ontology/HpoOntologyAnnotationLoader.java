@@ -1,11 +1,10 @@
 package org.jax.oan.ontology;
 
-import org.jax.oan.core.AlternativePrefix;
+import org.jax.oan.core.*;
 import org.jax.oan.exception.OntologyAnnotationNetworkDataException;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
 import org.jax.oan.graph.GraphDatabaseOperations;
-import org.jax.oan.core.OntologyModule;
 import org.monarchinitiative.phenol.annotations.formats.AnnotationReference;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoAssociationData;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoGeneAnnotation;
@@ -13,6 +12,7 @@ import org.monarchinitiative.phenol.annotations.formats.hpo.HpoOnset;
 import org.monarchinitiative.phenol.annotations.formats.hpo.category.HpoCategories;
 import org.monarchinitiative.phenol.annotations.formats.hpo.category.HpoCategoryLookup;
 import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
+import org.monarchinitiative.phenol.annotations.io.hpo.HpoAnnotationLine;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataLoader;
 import org.monarchinitiative.phenol.io.OntologyLoader;
@@ -49,9 +49,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	}
 
 	/**
-	 * Load Neo4J Graph with hpo data. The graph has nodes: Disease, Phenotype, Gene, Assay, Medical Action and
-	 * edges Disease - Manifest - Phenotype - Metadata (with disease id) - PhenotypeMetadata,
-	 * Disease - Expresses - Gene, Assay - Measures - Phenotype,
+	 * Load Neo4J Graph with hpo data.
 	 *
 	 * @param hpoDataDirectory the directory for hpo graph.
 	 * @throws IOException if a file can't be found
@@ -61,21 +59,22 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	public void load(Path hpoDataDirectory, Set<DiseaseDatabase> databases) throws IOException, OntologyAnnotationNetworkException {
 		final HpoDataResolver dataResolver = HpoDataResolver.of(hpoDataDirectory);
 		final Ontology hpoOntology = OntologyLoader.loadOntology(dataResolver.hpJson().toFile());
-		final Ontology mondoOntology = OntologyLoader.loadOntology(dataResolver.mondoJson().toFile());
+		final Ontology mondoOntology = OntologyLoader.loadOntology(dataResolver.mondoJson().toFile(), "MONDO");
 		final HpoaDiseaseDataContainer diseases = HpoaDiseaseDataLoader.of(databases).loadDiseaseData(dataResolver.phenotypeAnnotations());
 		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).orphaToGenePath(dataResolver.orpha2Gene()).mim2GeneMedgen(dataResolver.mim2geneMedgen())
 				.hpoDiseases(diseases).hgncCompleteSetArchive(dataResolver.hgncCompleteSet()).build();
 		graphDatabaseOperations.dropIndexes(OntologyModule.HPO);
+		graphDatabaseOperations.createIndexes(OntologyModule.HPO);
 		Map<TermId, String> categories = phenotypeToCategory(hpoOntology);
 		phenotypes(hpoOntology.getTerms(), categories);
 		diseases(diseases, mondoOntology.getTerms());
 		genes(associations);
-		graphDatabaseOperations.createIndexes(OntologyModule.HPO);
 		phenotypeToPhenotype(hpoOntology.getTerms(), hpoOntology);
 		diseaseToPhenotype(diseases, hpoOntology);
 		geneToPhenotype(associations);
 		diseaseToGene(associations);
 		assayToPhenotype(dataResolver.loinc());
+		medicalAction(dataResolver.maxoa());
 	}
 	void phenotypes(Collection<Term> phenotypes, Map<TermId, String> categories) throws OntologyAnnotationNetworkDataException {
 			logger.info("Loading Phenotypes...");
@@ -180,36 +179,31 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 			));
 			graphWriter.write(queries);
 			logger.info("Done.");
-
-
 	}
 
 	void diseaseToPhenotype(HpoaDiseaseDataContainer diseases, Ontology ontology){
 			logger.info("Loading Disease to Phenotype Relationships...");
 			ArrayList<Query> queries = new ArrayList<>(Collections.emptyList());
-			diseases.diseaseData().stream().flatMap(d -> d.annotationLines().stream()).forEach(line -> {
+			Set<HpoAnnotationLine> lines = diseases.diseaseData().stream().flatMap(d -> d.annotationLines().stream()).collect(Collectors.toSet());
+			for (HpoAnnotationLine line: lines) {
 				String onset = line.onset().map(HpoOnset::id).map(TermId::getValue).orElse("");
 				String frequency = formatFrequency(line.frequency(), ontology);
 				String sources = formatSources(line.annotationReferences());
-				String sex;
+				String sex = "";
 				if (line.sex() != null) {
 					sex = line.sex().toString();
-				} else {
-					sex = "";
 				}
 				Query query = new Query("MATCH (d:Disease {id: $diseaseId}), (p:Phenotype {id: $phenotypeId})" +
-								" MERGE (d)-[:MANIFESTS]->(p)<-[:WITH_METADATA {context: $diseaseId}]-(pm: PhenotypeMetadata {onset: $onset, frequency: $frequency, sex: $sex," +
-								"sources: $sources})",
+						"WITH d,p MERGE (pa: PhenotypeAnnotation {onset: $onset, frequency: $frequency, sex: $sex, sources: $source}) " +
+						"WITH d,p,pa MERGE (pa)-[:DESCRIBES {context: $diseaseId}]->(p) " +
+						"WITH p,d MERGE (p)-[:MANIFESTS]->(d)",
 						parameters(
 								"diseaseId", line.diseaseId().toString(),
 								"phenotypeId", line.phenotypeTermId().getValue(),
-								"onset", onset, "frequency", frequency, "sex", sex,
-								"sources", sources
-						)
-				);
+								"onset", onset, "frequency", frequency, "sex", sex, "source", sources));
 				queries.add(query);
-			});
-			graphWriter().write(queries);
+			}
+			graphWriter.write(queries);
 			logger.info("Done.");
 	}
 
@@ -225,6 +219,56 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		}
 		graphWriter().write(queries);
 		logger.info("Done");
+	}
+
+	void medicalAction(Path maxoa){
+		logger.info("Loading Medical Action Relationships...");
+		final TermId root = TermId.of("HP:0000118");
+		ArrayList<Query> queries = new ArrayList<>(Collections.emptyList());
+		try (BufferedReader reader = new BufferedReader(new FileReader(maxoa.toFile()))) {
+			queries.clear();
+			String line;
+			reader.readLine();
+
+			while ((line = reader.readLine()) != null) {
+				String[] fields = line.split("\t");
+				TermId mondo = TermId.of(fields[0]);
+				TermId phenotype = TermId.of(fields[5]);
+				MedicalActionMetadata meta;
+				Query connectMedicalAction;
+				Query createMedicalAction = new Query("MERGE (m:MedicalAction {id: $id}) ON CREATE SET m.name = $name",
+						parameters("id", fields[3], "name",fields[4]));
+
+				if (phenotype.getPrefix().contains("MONDO")){
+					phenotype = root;
+				}
+
+				if (!fields[8].isEmpty()){
+					 meta = new MedicalActionMetadata(fields[2], Evidence.valueOf(fields[7]), new Extension(TermId.of(fields[8]), fields[9]), MedicalActionRelation.valueOf(fields[6]), fields[12]);
+					connectMedicalAction = new Query("MATCH (d:Disease {mondoId: $diseaseId}), (p:Phenotype {id: $phenotypeId}), (m:MedicalAction {id: $medicalAction}) WHERE d.id IS NOT NULL and d.id contains 'OMIM' " +
+							"WITH d,p,m MERGE (mm: MedicalActionAnnotation {evidence: $evidenceCode, author: $author, source: $sourceId, extensionId: $extensionId, extensionName: $extensionName})" +
+							"WITH d,p,mm,m MERGE (mm)-[:DESCRIBES {dcontext: d.id, pcontext: p.id }]->(m) " +
+							"WITH m,p,d MERGE (m)-[:CLARIFIES {by:$relation, context: d.id}]->(p)",
+							parameters("medicalAction", fields[3], "diseaseId", mondo.getValue(), "phenotypeId", phenotype.getValue(),
+									"relation", meta.medicalActionRelation().toString(), "sourceId", meta.sourceId(), "evidenceCode", meta.evidence().toString(), "author", meta.author(), "extensionId", meta.extension().getId(), "extensionName", meta.extension().getName()));
+				} else {
+					 meta = new MedicalActionMetadata(fields[2], Evidence.valueOf(fields[7]), null, MedicalActionRelation.valueOf(fields[6]), fields[12]);
+					 connectMedicalAction = new Query("MATCH (d:Disease {mondoId: $diseaseId}), (p:Phenotype {id: $phenotypeId}), (m:MedicalAction {id: $medicalAction}) WHERE d.id IS NOT NULL and d.id contains 'OMIM' " +
+							 "WITH d,p,m MERGE (mm: MedicalActionAnnotation {evidence: $evidenceCode, author: $author, source: $sourceId, extensionId: $extensionId, extensionName: $extensionName})" +
+							 "WITH d,p,mm,m MERGE (mm)-[:DESCRIBES {dcontext: d.id, pcontext: p.id }]->(m) " +
+							 "WITH m,p,d MERGE (m)-[:CLARIFIES {by:$relation, context: d.id}]->(p)",
+							 parameters("medicalAction", fields[3], "diseaseId", mondo.getValue(), "phenotypeId", phenotype.getValue(),
+									 "relation", meta.medicalActionRelation().toString(), "sourceId", meta.sourceId(), "evidenceCode", meta.evidence().toString(), "author", meta.author(), "extensionId", "", "extensionName", ""));
+
+				}
+				queries.add(createMedicalAction);
+				queries.add(connectMedicalAction);
+			}
+			graphWriter().write(queries);
+			logger.info("Done.");
+		} catch (IOException e) {
+			throw new OntologyAnnotationNetworkRuntimeException("There was a problem with the required assay file format.", e);
+		}
 	}
 
 

@@ -37,7 +37,7 @@ class DiseaseServiceTest {
 
 	@ParameterizedTest
 	@MethodSource
-	void test_find_all(TermId id, List<Gene> genes, List<Phenotype> phenotypes) throws OntologyAnnotationNetworkException {
+	void test_find_all(TermId id, List<Gene> genes, List<PhenotypeExtended> phenotypes) throws OntologyAnnotationNetworkException {
 		when(diseaseRepository.findGenesByDisease(id))
 				.thenReturn(genes);
 		when(diseaseRepository.findPhenotypesByDisease(id))
@@ -66,7 +66,7 @@ class DiseaseServiceTest {
 						new Gene(TermId.of("NCBIGene:00093"),"TP4"),
 						new Gene(TermId.of("NCBIGene:02002"),"YZ")
 				), List.of(
-						new Phenotype(TermId.of("HP:099233"),"Long legs", "Lower Half", null)
+						new PhenotypeExtended(TermId.of("HP:099233"),"Long legs", "Lower Half", null)
 				)),
 				Arguments.of(
 						TermId.of("MONDO:0392932"),

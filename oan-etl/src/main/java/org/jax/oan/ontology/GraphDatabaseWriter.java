@@ -29,7 +29,7 @@ public class GraphDatabaseWriter implements GraphWriter, SessionAware {
 			int i = 0;
 			for (Query query: queries){
 				tx.run(query);
-				if (i % 500 == 0){
+				if (i % 100 == 0){
 					tx.commit();
 					tx = session.beginTransaction();
 				}

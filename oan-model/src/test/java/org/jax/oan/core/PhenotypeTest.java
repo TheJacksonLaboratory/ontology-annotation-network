@@ -14,8 +14,8 @@ class PhenotypeTest {
 		TermId id = TermId.of("HP:0000001");
 		String name = "Abnormality";
 		String category = "Inheritance";
-		Phenotype phenotype = new Phenotype(id, name, category,null);
-		Phenotype phenotypeOther = new Phenotype(id, name, category, null);
+		PhenotypeExtended phenotype = new PhenotypeExtended(id, name, category,null);
+		PhenotypeExtended phenotypeOther = new PhenotypeExtended(id, name, category, null);
 		assertEquals(phenotype.getId(), id.getValue());
 		assertEquals(phenotype.getName(), name);
 		assertEquals(phenotype.getCategory().get(), category);

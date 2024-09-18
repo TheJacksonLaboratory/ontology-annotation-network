@@ -1,0 +1,10 @@
+disease_id	disease_name	source_id	maxo_id	maxo_name	hpo_id	relation	evidence	extension_id	extension_name	comment	other	author	last_updated	created
+MONDO:0008854	Bardet-biedl Syndrome 1	PMID:20301537	MAXO:0000088	dietary intervention	HP:0000819	TREATS	TAS					ORCID:0000-0001-7941-2961	2023-01-31	2022-01-06
+MONDO:0008854	Bardet-biedl Syndrome 1	PMID:20301537	MAXO:0000011	physical therapy	HP:0002141	TREATS	TAS					ORCID:0000-0001-7941-2961	2023-01-31	2022-01-06
+MONDO:0008854	Bardet-biedl Syndrome 1	PMID:20301537	MAXO:0000930	speech therapy	HP:0000750	TREATS	TAS					ORCID:0000-0001-7941-2961	2023-01-31	2022-01-06
+MONDO:0008854	Bardet-biedl Syndrome 1	PMID:20301537	MAXO:0000088	dietary intervention	HP:0001513	TREATS	TAS					ORCID:0000-0001-7941-2961	2023-01-31	2022-01-06
+MONDO:0021056	Adenomatous Polyposis Coli	https://www.ncbi.nlm.nih.gov/books/NBK1345/	MAXO:0001110	tumorectomy	HP:0100245	TREATS	TAS					ORCID:0000-0001-7941-2961	2023-04-06	2022-01-25
+MONDO:0021056	Adenomatous Polyposis Coli	https://www.ncbi.nlm.nih.gov/books/NBK1345/	MAXO:0000885	surgical removal procedure	HP:0030731	TREATS	TAS					ORCID:0000-0001-7941-2961	2023-04-06	2022-01-26
+MONDO:0021056	Adenomatous Polyposis Coli	https://www.ncbi.nlm.nih.gov/books/NBK1345/	MAXO:0000885	surgical removal procedure	HP:0004394	TREATS	TAS					ORCID:0000-0001-7941-2961	2023-02-04	2022-01-26
+MONDO:0021056	Adenomatous Polyposis Coli	https://www.ncbi.nlm.nih.gov/books/NBK1345/	MAXO:0000885	surgical removal procedure	HP:0006722	TREATS	TAS					ORCID:0000-0001-7941-2961	2023-02-04	2022-01-26
+MONDO:0009367	Mckusick-kaufman Syndrome	PMID:20301675	MAXO:0000004	surgical procedure	HP:0030010	TREATS	TAS					ORCID:0000-0001-5208-3432	2023-01-31	2022-02-10

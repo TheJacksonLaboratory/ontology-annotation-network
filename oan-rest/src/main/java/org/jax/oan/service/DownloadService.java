@@ -33,7 +33,7 @@ public class DownloadService {
 		switch (source){
 			case DISEASE -> {
 				if (target.equals(SupportedEntity.PHENOTYPE)){
-					Collection<Phenotype> phenotypes = this.diseaseRepository.findPhenotypesByDisease(termId);
+					Collection<PhenotypeExtended> phenotypes = this.diseaseRepository.findPhenotypesByDisease(termId);
 					return buildFile(String.format("phenotypes_for_%s", termId.getValue()), phenotypes);
 
 				} else {

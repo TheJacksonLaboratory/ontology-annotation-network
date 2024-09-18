@@ -37,6 +37,7 @@ public class GraphDatabaseOperations implements GraphOperations {
 			queries.add(new Query("CREATE INDEX disease_id FOR (n:Disease) ON (n.id)"));
 			queries.add(new Query("CREATE INDEX gene_id FOR (n:Gene) ON (n.id)"));
 			queries.add(new Query("CREATE INDEX assay_id FOR (n:Assay) ON (n.id)"));
+			queries.add(new Query("CREATE INDEX p_annotation_id FOR (n:PhenotypeAnnotation) ON (n.onset, n.frequency, n.sex, n.sources)"));
 			graphWriter().write(queries);
 			logger.info("Done.");
 		}
@@ -50,6 +51,7 @@ public class GraphDatabaseOperations implements GraphOperations {
 			queries.add(new Query("DROP INDEX disease_id IF EXISTS"));
 			queries.add(new Query("DROP INDEX gene_id IF EXISTS"));
 			queries.add(new Query("DROP INDEX assay_id IF EXISTS"));
+			queries.add(new Query("DROP INDEX p_annotation_id IF EXISTS"));
 			graphWriter().write(queries);
 			logger.info("Done.");
 		}
