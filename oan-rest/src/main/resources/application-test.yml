@@ -5,5 +5,5 @@ neo4j:
     embedded:
         ephemeral: true
     password: password
-    uri: bolt://localhost:7687
+    uri: bolt://localhost:9869
     username: neo4j

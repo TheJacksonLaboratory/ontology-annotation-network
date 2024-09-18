@@ -179,8 +179,6 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 			));
 			graphWriter.write(queries);
 			logger.info("Done.");
-
-
 	}
 
 	void diseaseToPhenotype(HpoaDiseaseDataContainer diseases, Ontology ontology){
