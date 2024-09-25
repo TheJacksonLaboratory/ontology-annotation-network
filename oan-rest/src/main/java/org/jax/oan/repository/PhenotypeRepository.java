@@ -36,6 +36,9 @@ public class PhenotypeRepository {
 				diseases.add(disease);
 			}
 		}
+		catch (Exception e){
+			return Collections.emptyList();
+		}
 		return diseases;
 	}
 
@@ -56,6 +59,9 @@ public class PhenotypeRepository {
 				genes.add(gene);
 			}
 		}
+		catch (Exception e){
+			return Collections.emptyList();
+		}
 		return genes;
 	}
 
@@ -74,6 +80,9 @@ public class PhenotypeRepository {
 				Assay assay = new Assay(TermId.of(String.format("LOINC:%s", value.get("id").asString())), value.get("name").asString());
 				assays.add(assay);
 			}
+		}
+		catch (Exception e){
+			return Collections.emptyList();
 		}
 		return assays;
 	}
@@ -100,6 +109,9 @@ public class PhenotypeRepository {
 				});
 				medicalActions.add(new MedicalActionSourceExtended(TermId.of(subject.get("id").asString()), subject.get("name").asString(), relations, sources));
 			}
+		}
+		catch (Exception e){
+			return Collections.emptyList();
 		}
 		return medicalActions;
 	}

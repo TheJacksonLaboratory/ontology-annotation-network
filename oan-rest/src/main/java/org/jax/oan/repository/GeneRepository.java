@@ -10,10 +10,7 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.Value;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import static org.neo4j.driver.Values.parameters;
 
@@ -41,7 +38,10 @@ public class GeneRepository {
 					Gene gene = new Gene(TermId.of(value.get("id").asString()), value.get("name").asString());
 					genes.add(gene);
 				}
-			}
+		}
+		catch (Exception e){
+			return Collections.emptyList();
+		}
 		return genes.stream().sorted(Comparator.comparing((Gene g) -> !g.getName().toLowerCase()
 				.startsWith(query.toLowerCase()))).toList();
 	}
@@ -60,6 +60,8 @@ public class GeneRepository {
 				Phenotype phenotype = new Phenotype(TermId.of(value.get("id").asString()), value.get("name").asString());
 				phenotypes.add(phenotype);
 			}
+		} catch (Exception e){
+			return Collections.emptyList();
 		}
 		return phenotypes;
 	}
@@ -79,6 +81,9 @@ public class GeneRepository {
 						value.get("mondoId").asString(), null);
 				diseases.add(disease);
 			}
+		}
+		catch (Exception e){
+			return Collections.emptyList();
 		}
 		return diseases;
 	}
