@@ -39,6 +39,9 @@ public class DiseaseRepository {
 			}
 			return Optional.empty();
 		}
+		catch (Exception e){
+			return Optional.empty();
+		}
 	}
 
 	/**
@@ -56,6 +59,9 @@ public class DiseaseRepository {
 						value.get("mondoId").asString(), value.get("description").asString());
 				diseases.add(disease);
 			}
+		}
+		catch (Exception e){
+			return Collections.emptyList();
 		}
 		return diseases.stream().sorted(Comparator.comparing((Disease d) -> !d.getName().toLowerCase()
 				.startsWith(query.toLowerCase()))).toList();
@@ -75,6 +81,9 @@ public class DiseaseRepository {
 				Gene gene = new Gene(TermId.of(value.get("id").asString()), value.get("name").asString());
 				genes.add(gene);
 			}
+		}
+		catch (Exception e){
+			return Collections.emptyList();
 		}
 		return genes;
 	}
@@ -96,6 +105,9 @@ public class DiseaseRepository {
 				PhenotypeExtended phenotype = new PhenotypeExtended(TermId.of(p.get("id").asString()), p.get("name").asString(), p.get("category").asString(), phenotypeMetadata);
 				phenotypes.add(phenotype);
 			}
+		}
+		catch (Exception e){
+			return Collections.emptyList();
 		}
 		return phenotypes;
 	}
@@ -129,6 +141,9 @@ public class DiseaseRepository {
 				});
 				actions.add(new MedicalActionTargetExtended(TermId.of(m.get("id").asString()), m.get("name").asString(), relations, targets ));
 			}
+		}
+		catch (Exception e){
+			return Collections.emptyList();
 		}
 		return actions;
 	}
