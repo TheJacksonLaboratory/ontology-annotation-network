@@ -16,6 +16,7 @@ import org.jax.oan.core.SupportedEntity;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
 import org.jax.oan.service.DiseaseService;
 import org.jax.oan.service.SearchService;
+import org.jax.oan.utils.QueryCleaner;
 import org.monarchinitiative.phenol.base.PhenolRuntimeException;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
@@ -46,9 +47,9 @@ public class SearchController {
 											@QueryValue(value = "limit", defaultValue = "10") int limit) {
 
 		if (entity.equalsIgnoreCase("GENE")){
-			return HttpResponse.ok(this.searchService.searchGene(q.toUpperCase(), page, limit));
+			return HttpResponse.ok(this.searchService.searchGene(QueryCleaner.clean(q.toUpperCase()), page, limit));
 		} else if (entity.equalsIgnoreCase("DISEASE")){
-			return HttpResponse.ok(this.searchService.searchDisease(q.toUpperCase(), page, limit));
+			return HttpResponse.ok(this.searchService.searchDisease(QueryCleaner.clean(q.toUpperCase()), page, limit));
 		} else {
 			return HttpResponse.badRequest();
 		}
