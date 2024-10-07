@@ -93,7 +93,7 @@ public class AnnotationController {
 			} else {
 				throw new HttpStatusException(HttpStatus.BAD_REQUEST, String.format("Downloading %s associations for %s is not supported.", entity, termId.getValue()));
 			}
-		} catch(PhenolRuntimeException | OntologyAnnotationNetworkRuntimeException e){
+		} catch(PhenolRuntimeException | OntologyAnnotationNetworkRuntimeException | IllegalArgumentException e){
 			throw new HttpStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
 		}
 	}
