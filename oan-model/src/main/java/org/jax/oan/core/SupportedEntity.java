@@ -13,7 +13,7 @@ public enum SupportedEntity {
 
 	UNKNOWN;
 	private final List<String> prefixes;
-	private SupportedEntity(String... prefixes){
+	SupportedEntity(String... prefixes){
 		this.prefixes = Arrays.asList(prefixes);
 	}
 
