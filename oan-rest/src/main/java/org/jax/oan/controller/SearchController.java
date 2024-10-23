@@ -38,7 +38,7 @@ public class SearchController {
 	public HttpResponse<?> searchEntity(@Schema(minLength = 1, maxLength = 20, type = "string", pattern = ".*", format = "string")
 											@PathVariable String entity,
 										@Schema(minLength = 1, maxLength = 255, type = "string", pattern = "^[a-zA-Z0-9\\s\\-':]+$", format = "string")
-										@QueryValue @Pattern(regexp = "^[a-zA-Z0-9\\s\\-':]+$") String q,
+										@QueryValue @Pattern(regexp = "^[a-zA-Z0-9\\s\\-':,]+$") String q,
 										@Schema(minLength = 0, maxLength = 1000, type = "number", format = "int32")
 											@QueryValue(value = "page", defaultValue = "0") int page,
 										@Schema(minLength = 0, maxLength = 10000, type = "number", format = "int32")
