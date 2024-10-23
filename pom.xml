@@ -6,7 +6,7 @@
   <groupId>org.jax.oan</groupId>
   <artifactId>ontology-annotation-network</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.10</version>
+  <version>1.0.11</version>
 
   <name>ontology-annotation-network</name>
   <url>https://github.com/TheJacksonLaboratory/ontology-annotation-network</url>
@@ -228,6 +228,11 @@
                 <groupId>io.micronaut.serde</groupId>
                 <artifactId>micronaut-serde-processor</artifactId>
                 <version>2.2.4</version>
+              </path>
+              <path>
+                <groupId>io.micronaut.validation</groupId>
+                <artifactId>micronaut-validation-processor</artifactId>
+                <version>${micronaut.version}</version>
               </path>
             </annotationProcessorPaths>
           </configuration>

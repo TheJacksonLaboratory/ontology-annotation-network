@@ -4,8 +4,6 @@ import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.event.StartupEvent;
 import io.micronaut.runtime.event.annotation.EventListener;
-import io.micronaut.runtime.server.event.ServerStartupEvent;
-import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
 import org.neo4j.driver.Driver;
 

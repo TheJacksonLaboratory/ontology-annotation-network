@@ -61,6 +61,13 @@ public class SearchControllerTest {
 		spec.when().get("/api/network/search/phenotype?q=bighead").then().statusCode(400);
 	}
 
+	@Test
+	void negative_search_bad_query(RequestSpecification spec){
+		spec.when().get("/api/network/search/disease?q=,marf").then().statusCode(400);
+		spec.when().get("/api/network/search/disease?q=%20Cardiac%20tumors%20(").then().statusCode(400);
+		spec.when().get("/api/network/search/disease?q=NM_000314.8:c.-511G%3EA").then().statusCode(400);
+	}
+
 
 	@Test
 	void postive_intersecting(RequestSpecification spec){
