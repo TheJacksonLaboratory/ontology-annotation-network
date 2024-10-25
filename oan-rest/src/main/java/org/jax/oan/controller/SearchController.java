@@ -45,9 +45,9 @@ public class SearchController {
 											@QueryValue(value = "limit", defaultValue = "10") int limit) {
 
 		if (entity.equalsIgnoreCase("GENE")){
-			return HttpResponse.ok(this.searchService.searchGene(q.toUpperCase(), page, limit));
+			return HttpResponse.ok(this.searchService.searchGene(q.toUpperCase().trim(), page, limit));
 		} else if (entity.equalsIgnoreCase("DISEASE")){
-			return HttpResponse.ok(this.searchService.searchDisease(q.toUpperCase(), page, limit));
+			return HttpResponse.ok(this.searchService.searchDisease(q.toUpperCase().trim(), page, limit));
 		} else {
 			return HttpResponse.badRequest();
 		}
