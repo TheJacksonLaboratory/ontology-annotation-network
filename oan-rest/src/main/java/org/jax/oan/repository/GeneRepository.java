@@ -32,7 +32,7 @@ public class GeneRepository {
 	public Collection<Gene> findGenes(String query){
 		Collection<Gene> genes = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
-				Result result = tx.run("MATCH (g: Gene) WHERE toLower(g.name) =~ $qe OR g.id CONTAINS $q RETURN g", parameters("q", query, "qe", String.format("%s%s%s",".*", query.toLowerCase().replaceAll("[-\\s]", ".*"), ".*")));
+				Result result = tx.run("MATCH (g: Gene) WHERE toLower(g.name) =~ $qe OR g.id CONTAINS $q RETURN g", parameters("q", query, "qe", String.format("%s%s%s",".*", query.toLowerCase().replaceAll("\\s+", " ").replaceAll("[-\\s]", ".*"), ".*")));
 				while (result.hasNext()) {
 					Value value = result.next().get("g");
 					Gene gene = new Gene(TermId.of(value.get("id").asString()), value.get("name").asString());

@@ -16,6 +16,9 @@ micronaut:
   serde:
     serialization:
       inclusion: ALWAYS
+endpoints:
+  all:
+    path: monitor/
 neo4j:
   password: password
   uri: bolt://localhost:7687

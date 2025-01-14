@@ -7,3 +7,6 @@ neo4j:
     password: password
     uri: bolt://localhost:9869
     username: neo4j
+endpoints:
+    all:
+        path: monitor/

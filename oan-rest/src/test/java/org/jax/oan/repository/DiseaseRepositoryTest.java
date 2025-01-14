@@ -102,4 +102,11 @@ class DiseaseRepositoryTest {
 		Collection<MedicalActionTargetExtended> mse = diseaseRepository.findMedicalActionsByDisease(TermId.of("OMIM:555555"));
 		assertEquals(2, mse.size());
 	}
+
+	@Test
+	void query_test(){
+		String bad_query = "All             Joint  laxity";
+		String good_query = String.format("%s%s%s",".*", bad_query.toLowerCase().replaceAll("\\s+", " ").replaceAll("[-\\s]", ".*"), ".*");
+		assertEquals(".*all.*joint.*laxity.*", good_query);
+	}
 }
