@@ -52,7 +52,7 @@ public class DiseaseRepository {
 	public Collection<Disease> findDiseases(String query) {
 		Collection<Disease> diseases = new ArrayList<>();
 		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (d: Disease) WHERE toLower(d.name) =~ $qe OR toLower(d.id) CONTAINS $q RETURN d", parameters("q", query.toLowerCase(), "qe", String.format("%s%s%s",".*", query.toLowerCase().replaceAll("[-\\s]", ".*"), ".*")));
+			Result result = tx.run("MATCH (d: Disease) WHERE toLower(d.name) =~ $qe OR toLower(d.id) CONTAINS $q RETURN d", parameters("q", query.toLowerCase(), "qe", String.format("%s%s%s",".*", query.toLowerCase().replaceAll("\\s+", " ").replaceAll("[-\\s]", ".*"), ".*")));
 			while (result.hasNext()) {
 				Value value = result.next().get("d");
 				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(),
