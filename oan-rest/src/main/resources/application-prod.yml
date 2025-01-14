@@ -18,7 +18,7 @@ micronaut:
             inclusion: ALWAYS
 endpoints:
     all:
-        path: /api/network/
+        path: monitor/
 neo4j:
     password: password
     uri: bolt://10.142.0.7:7687
