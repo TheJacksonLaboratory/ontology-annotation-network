@@ -1,0 +1,51 @@
+name: Only Swap Disks & Copy Data
+on: workflow_dispatch
+env:
+  GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
+  GCLOUD_REGION: us-east1
+  GCLOUD_GCR: us-docker.pkg.dev
+  GCLOUD_REGISTRY_PROJECT_ID: ${{ secrets.GCLOUD_REGISTRY_PROJECT_ID }}
+  GCLOUD_REGISTRY_IMAGE_ENV: docker
+  GCLOUD_REGISTRY_IMAGE_PROJECT: ontology
+  SERVICE_NAME: ontology-annotation-network
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GCLOUD_SA_KEY }}'
+
+      - name: Setup Google Cloud CLI
+        uses: 'google-github-actions/setup-gcloud@v1'
+
+      - name: Stop prod container, Swap disk to loader
+        id: swap1
+        run: |
+          # Stop the instance
+          gcloud compute instances stop ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
+          # Detach disk
+          gcloud compute instances detach-disk ontology-annotation-network-containerized --disk=graph-data --zone=us-east1-b
+          # Attach disk to loader
+          gcloud compute instances attach-disk ontology-annotation-loader --disk=graph-data --device-name=graph-data --zone=us-east1-b
+          # turn on loader
+          gcloud compute instances start ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b    
+
+      - name: Sleep for startup script time
+        run: sleep 60
+
+      - name: Stop loader container, Swap disk to prod
+        id: swap2
+        run: |
+          # turn off loader
+          gcloud compute instances stop ontology-annotation-loader --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
+          # detach disk
+          gcloud compute instances detach-disk ontology-annotation-loader --disk=graph-data --zone=us-east1-b
+          # re-attach disk
+          gcloud compute instances attach-disk ontology-annotation-network-containerized --device-name=graph-data --disk=graph-data --zone=us-east1-b
+          # turn on instance
+          gcloud compute instances start ontology-annotation-network-containerized --project=$GCLOUD_PROJECT_ID --zone=us-east1-b
