@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 @OpenAPIDefinition(
     info = @Info(
             title = "ontology-annotation-network",
-            version = "1.0.12",
+            version = "1.0.13",
             description = "A restful service for access to the ontology annotation network.",
             contact = @Contact(name = "Michael Gargano", email = "Michael.Gargano@jax.org")
     ), servers = {@Server(url = "https://ontology.jax.org/api/network", description = "Production Server URL")
