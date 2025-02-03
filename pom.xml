@@ -27,7 +27,7 @@
     <neo4j.version>5.13.0</neo4j.version>
     <swagger.version>2.2.20</swagger.version>
     <picocli.version>4.7.5</picocli.version>
-    <logback.version>1.4.11</logback.version>
+    <logback.version>1.4.12</logback.version>
   </properties>
 
   <modules>
