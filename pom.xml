@@ -6,7 +6,7 @@
   <groupId>org.jax.oan</groupId>
   <artifactId>ontology-annotation-network</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.12</version>
+  <version>1.0.13</version>
 
   <name>ontology-annotation-network</name>
   <url>https://github.com/TheJacksonLaboratory/ontology-annotation-network</url>
@@ -27,7 +27,7 @@
     <neo4j.version>5.13.0</neo4j.version>
     <swagger.version>2.2.20</swagger.version>
     <picocli.version>4.7.5</picocli.version>
-    <logback.version>1.4.11</logback.version>
+    <logback.version>1.4.12</logback.version>
   </properties>
 
   <modules>
