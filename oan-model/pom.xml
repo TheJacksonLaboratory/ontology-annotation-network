@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.jax.oan</groupId>
         <artifactId>ontology-annotation-network</artifactId>
-        <version>1.0.13</version>
+        <version>1.0.14</version>
     </parent>
 
     <artifactId>oan-model</artifactId>

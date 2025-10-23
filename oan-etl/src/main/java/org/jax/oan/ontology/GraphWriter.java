@@ -1,6 +1,5 @@
 package org.jax.oan.ontology;
 
-import org.jax.oan.graph.GraphOperations;
 import org.neo4j.driver.Query;
 
 import java.util.Collection;
