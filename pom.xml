@@ -6,7 +6,7 @@
   <groupId>org.jax.oan</groupId>
   <artifactId>ontology-annotation-network</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.13</version>
+  <version>1.0.14</version>
 
   <name>ontology-annotation-network</name>
   <url>https://github.com/TheJacksonLaboratory/ontology-annotation-network</url>
@@ -19,7 +19,7 @@
     <maven.compiler.target>${java.version}</maven.compiler.target>
 
     <micronaut.version>4.1.0</micronaut.version>
-    <phenol.version>2.1.1</phenol.version>
+    <phenol.version>2.1.4</phenol.version>
     <hamcrest.version>2.2</hamcrest.version>
     <junit-jupiter.version>5.10.0</junit-jupiter.version>
     <mockito.version>5.3.1</mockito.version>
