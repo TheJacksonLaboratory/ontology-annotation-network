@@ -3,7 +3,7 @@
 set -e
 
 # OMIM 2 GENE
-wget -P $1 --no-use-server-timestamps ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/mim2gene_medgen
+# wget -P $1 --no-use-server-timestamps ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/mim2gene_medgen
 
 # HPO OBO
 wget -P $1 --no-use-server-timestamps http://purl.obolibrary.org/obo/hp/hp-simple-non-classified.json
