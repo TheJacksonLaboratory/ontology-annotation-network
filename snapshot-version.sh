@@ -1,8 +1,7 @@
 #!/bin/bash
 OS=`uname`
 # This script allows up to quickly update versions where they are needed.
-#PROJECT_VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout | sed 's/-SNAPSHOT//g')
-PROJECT_VERSION=$1
+PROJECT_VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout | sed 's/-SNAPSHOT//g')
 if [ "$OS" = 'Darwin' ]; then
         # for MacOS
         sed -i '' "s/version = .*/version = \"${PROJECT_VERSION}\",/g" oan-rest/src/main/java/org/jax/oan/Application.java
