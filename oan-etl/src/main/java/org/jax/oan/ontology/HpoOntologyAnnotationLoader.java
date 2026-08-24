@@ -98,20 +98,15 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 
 	void genes(HpoAssociationData associations){
 		logger.info("Loading Genes...");
-		ArrayList<Query> queries = new ArrayList<>(Collections.emptyList());
-		associations.getGeneIdentifiers().forEach( g -> {
-			Query query = new Query("CREATE (g: Gene {id: $id, name: $name})",
-					parameters("id", g.id().toString(), "name", g.symbol()));
-			queries.add(query);
-			}
-		);
-		graphWriter().write(queries);
+		List<Object[]> rows = new ArrayList<>();
+		associations.getGeneIdentifiers().forEach(g -> rows.add(new Object[]{g.id().toString(), g.symbol()}));
+		sqliteWriter.batchInsert("INSERT OR IGNORE INTO gene (id, name) VALUES (?, ?)", rows);
 		logger.info("Done.");
 	}
 
 	void diseases(HpoaDiseaseDataContainer diseases, Collection<Term> mondoTerms){
 		logger.info("Loading Diseases...");
-		ArrayList<Query> queries = new ArrayList<>(Collections.emptyList());
+		List<Object[]> rows = new ArrayList<>();
 		diseases.diseaseData().stream().distinct().forEach(d -> {
 					Optional<Term> equivalent = findMondoEquivalent(d.id(), d.name(), mondoTerms);
 					String mondoId = "";
@@ -120,12 +115,10 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 						mondoId = equivalent.get().id().getValue();
 						description = equivalent.get().getDefinition();
 					}
-					Query query =  new Query("CREATE (d:Disease {id: $id, name: $name, mondoId: $mondoId, description: $description})",
-							parameters("name", d.name(), "id", d.id().toString(), "mondoId", mondoId, "description", description));
-					queries.add(query);
+					rows.add(new Object[]{d.id().toString(), d.name(), mondoId, description});
 				}
 		);
-		graphWriter().write(queries);
+		sqliteWriter.batchInsert("INSERT OR IGNORE INTO disease (id, name, mondo_id, description) VALUES (?, ?, ?, ?)", rows);
 		logger.info("Done.");
 	}
 

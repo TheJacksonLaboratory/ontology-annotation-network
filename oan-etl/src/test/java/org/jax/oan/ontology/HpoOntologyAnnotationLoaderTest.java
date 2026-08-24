@@ -85,25 +85,33 @@ class HpoOntologyAnnotationLoaderTest {
 	}
 
 	@Test
-	void diseases() {
-		try(Session session = driver.session()) {
-			List<Node> nodes = session.run("MATCH (n: Disease) RETURN n")
-					.list(record -> record.get("n").asNode());
-			Node node = session.run("MATCH (n: Disease {id: 'OMIM:619340'}) RETURN n").single().get("n").asNode();
-			assertEquals(3, nodes.size());
-			assertEquals("Developmental and epileptic encephalopathy 96", node.get("name").asString());
-			assertEquals("MONDO:0000001", node.get("mondoId").asString());
+	void diseases() throws Exception {
+		try (var statement = sqliteWriter.connection().createStatement()) {
+			var all = statement.executeQuery("SELECT COUNT(*) AS c FROM disease");
+			all.next();
+			assertEquals(3, all.getInt("c"));
+
+			var one = statement.executeQuery("SELECT name, mondo_id FROM disease WHERE id = 'OMIM:619340'");
+			one.next();
+			assertEquals("Developmental and epileptic encephalopathy 96", one.getString("name"));
+			assertEquals("MONDO:0000001", one.getString("mondo_id"));
+
+			var orpha = statement.executeQuery("SELECT mondo_id FROM disease WHERE id = 'ORPHA:99999'");
+			orpha.next();
+			assertEquals("MONDO:0008854", orpha.getString("mondo_id"));
 		}
 	}
 
 	@Test
-	void genes() {
-		try(Session session = driver.session()) {
-			List<Node> nodes = session.run("MATCH (n: Gene) RETURN n")
-					.list(record -> record.get("n").asNode());
-			Node node = session.run("MATCH (n: Gene {name: 'NSF'}) RETURN n").single().get("n").asNode();
-			assertEquals(2, nodes.size());
-			assertEquals("NCBIGene:4905", node.get("id").asString());
+	void genes() throws Exception {
+		try (var statement = sqliteWriter.connection().createStatement()) {
+			var all = statement.executeQuery("SELECT COUNT(*) AS c FROM gene");
+			all.next();
+			assertEquals(2, all.getInt("c"));
+
+			var one = statement.executeQuery("SELECT id FROM gene WHERE name = 'NSF'");
+			one.next();
+			assertEquals("NCBIGene:4905", one.getString("id"));
 		}
 	}
 
