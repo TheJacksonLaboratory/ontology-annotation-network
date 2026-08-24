@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -52,7 +53,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		final Ontology mondoOntology = OntologyLoader.loadOntology(dataResolver.mondoJson().toFile(), "MONDO");
 		final HpoaDiseaseDataContainer diseases = HpoaDiseaseDataLoader.of(databases).loadDiseaseData(dataResolver.phenotypeAnnotations());
 		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).orphaToGenePath(dataResolver.orpha2Gene()).mim2GeneMedgen(dataResolver.mim2geneMedgen())
-				.hpoDiseases(diseases).hgncCompleteSetArchive(dataResolver.hgncCompleteSet()).build();
+				.hpoDiseases(diseases).hgncCompleteSetArchive(deduplicateHgncEntrezIds(dataResolver.hgncCompleteSet())).build();
 		Map<TermId, String> categories = phenotypeToCategory(hpoOntology);
 		phenotypes(hpoOntology.getTerms(), categories);
 		diseases(diseases, mondoOntology.getTerms());
@@ -65,6 +66,47 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		medicalAction(dataResolver.maxoa(), diseases, mondoOntology.getTerms());
 		SqliteSchema.createIndexes(sqliteWriter);
 	}
+
+	/**
+	 * HGNC's complete set occasionally carries two symbols pointing at the same NCBI Gene
+	 * (entrez_id) -- a stale cross-reference on HGNC's side rather than a real ambiguity in
+	 * NCBI's own id space. Phenol's association builder has no tolerance for that (a strict,
+	 * no-duplicates toMap), so keep the first row seen per entrez_id and drop the rest,
+	 * logging what was dropped so a real data problem stays visible.
+	 */
+	Path deduplicateHgncEntrezIds(Path hgncCompleteSet) throws IOException {
+		List<String> lines = Files.readAllLines(hgncCompleteSet);
+		if (lines.isEmpty()) {
+			return hgncCompleteSet;
+		}
+		int entrezIdIndex = Arrays.asList(lines.get(0).split("\t", -1)).indexOf("entrez_id");
+		if (entrezIdIndex < 0) {
+			return hgncCompleteSet;
+		}
+
+		Set<String> seenEntrezIds = new HashSet<>();
+		List<String> deduplicated = new ArrayList<>(lines.size());
+		deduplicated.add(lines.get(0));
+		for (int i = 1; i < lines.size(); i++) {
+			String line = lines.get(i);
+			String[] fields = line.split("\t", -1);
+			String entrezId = entrezIdIndex < fields.length ? fields[entrezIdIndex] : "";
+			if (!entrezId.isEmpty() && !seenEntrezIds.add(entrezId)) {
+				logger.warn("Dropping HGNC row with duplicate entrez_id {}: {}", entrezId, fields.length > 1 ? fields[1] : line);
+				continue;
+			}
+			deduplicated.add(line);
+		}
+		if (deduplicated.size() == lines.size()) {
+			return hgncCompleteSet;
+		}
+
+		Path deduplicatedFile = Files.createTempFile("hgnc_complete_set_deduplicated", ".txt");
+		Files.write(deduplicatedFile, deduplicated);
+		deduplicatedFile.toFile().deleteOnExit();
+		return deduplicatedFile;
+	}
+
 	void phenotypes(Collection<Term> phenotypes, Map<TermId, String> categories) throws OntologyAnnotationNetworkDataException {
 			logger.info("Loading Phenotypes...");
 			List<Object[]> rows = new ArrayList<>();

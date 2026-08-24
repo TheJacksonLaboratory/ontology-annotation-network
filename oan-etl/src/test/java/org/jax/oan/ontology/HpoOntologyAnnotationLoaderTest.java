@@ -12,6 +12,7 @@ import org.monarchinitiative.phenol.io.OntologyLoader;
 import org.monarchinitiative.phenol.ontology.data.*;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -275,6 +276,37 @@ class HpoOntologyAnnotationLoaderTest {
 		assertEquals(pc.get(TermId.of("HP:0002086")), "Respiratory System");
 		assertTrue((pc.containsKey(TermId.of("HP:0000001"))));
 		assertEquals(pc.get(TermId.of("HP:0000001")), "Other");
+	}
+
+	@Test
+	void deduplicateHgncEntrezIdsDropsLaterDuplicateEntrezId(@TempDir Path dir) throws Exception {
+		Path hgnc = dir.resolve("hgnc_complete_set.txt");
+		Files.write(hgnc, List.of(
+				"hgnc_id\tsymbol\tname\tentrez_id",
+				"HGNC:1\tGENE1\tGene One\t111",
+				"HGNC:2\tGENE2\tGene Two\t222",
+				"HGNC:3\tGENE2-DUP\tGene Two Duplicate\t222",
+				"HGNC:4\tGENE3\tGene Three\t"
+		));
+
+		Path deduplicated = graphLoader.deduplicateHgncEntrezIds(hgnc);
+		List<String> lines = Files.readAllLines(deduplicated);
+
+		assertEquals(4, lines.size());
+		assertTrue(lines.stream().anyMatch(l -> l.startsWith("HGNC:2\t")));
+		assertTrue(lines.stream().noneMatch(l -> l.startsWith("HGNC:3\t")));
+		assertTrue(lines.stream().anyMatch(l -> l.startsWith("HGNC:4\t")));
+	}
+
+	@Test
+	void deduplicateHgncEntrezIdsReturnsOriginalPathWhenNoDuplicates(@TempDir Path dir) throws Exception {
+		Path hgnc = dir.resolve("hgnc_complete_set.txt");
+		Files.write(hgnc, List.of(
+				"hgnc_id\tsymbol\tname\tentrez_id",
+				"HGNC:1\tGENE1\tGene One\t111"
+		));
+
+		assertEquals(hgnc, graphLoader.deduplicateHgncEntrezIds(hgnc));
 	}
 
 }
