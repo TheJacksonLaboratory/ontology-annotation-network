@@ -15,6 +15,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Resolve latest release tag
+        id: latest_tag
+        run: |
+          TAG=$(git describe --tags --abbrev=0 --match 'v[0-9]*')
+          echo "Building from tag: $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout release tag
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.latest_tag.outputs.tag }}
+
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:

@@ -14,6 +14,9 @@ wget -P $1 --no-use-server-timestamps http://purl.obolibrary.org/obo/mondo/mondo
 # MAXO OBO
 wget -P $1 --no-use-server-timestamps https://raw.githubusercontent.com/monarch-initiative/MAxO/master/maxo.json
 
+# MAXO ANNOTATIONS
+wget -P $1 --no-use-server-timestamps https://github.com/monarch-initiative/MAxO/releases/latest/download/maxo-annotations.tsv
+
 # ORPHANET 2 GENE
 wget -P $1 --no-use-server-timestamps http://www.orphadata.org/data/xml/en_product6.xml
 
