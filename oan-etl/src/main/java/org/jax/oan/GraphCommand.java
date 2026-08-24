@@ -22,6 +22,9 @@ public class GraphCommand implements Runnable {
 	@Option(names = {"-d", "--data"}, description = "The directory with the data.", required = true)
 	Path path;
 
+	@Option(names = {"-o", "--output"}, description = "Path to the SQLite database file to write.", required = true)
+	Path output;
+
 	@Option(names = {"-t", "--truncate"}, description = "To truncate the graph or not.", defaultValue = "false")
 	boolean truncate;
 
@@ -30,13 +33,13 @@ public class GraphCommand implements Runnable {
 	}
 
 	public void run() {
-		try {
+		try (SqliteWriter sqliteWriter = new SqliteWriter(output)) {
 			GraphDatabaseWriter graphDatabaseWriter = new GraphDatabaseWriter(driver);
 			if (truncate) {
 				graphDatabaseWriter.truncate();
 			}
 
-			new HpoOntologyAnnotationLoader(graphDatabaseWriter).load(path, Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET));
+			new HpoOntologyAnnotationLoader(graphDatabaseWriter, sqliteWriter).load(path, Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET));
 		} catch (Exception e) {
 			throw new OntologyAnnotationNetworkRuntimeException(e);
 		}

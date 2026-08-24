@@ -7,6 +7,7 @@ import org.jax.oan.graph.GraphDatabaseOperations;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.io.TempDir;
 import org.monarchinitiative.phenol.annotations.formats.AnnotationReference;
 import org.monarchinitiative.phenol.annotations.formats.EvidenceCode;
 import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
@@ -31,18 +32,32 @@ class HpoOntologyAnnotationLoaderTest {
 
 	GraphDatabaseOperations graphDatabaseOperations;
 
+	SqliteWriter sqliteWriter;
+
 	@Inject
 	Driver driver;
+
+	@TempDir
+	static Path tempDir;
 
 	Ontology hpoOntology;
 
 	@BeforeAll
 	void setup() throws OntologyAnnotationNetworkException, IOException {
 		final GraphDatabaseWriter graphDatabaseWriter = new GraphDatabaseWriter(this.driver);
-		this.graphLoader = new HpoOntologyAnnotationLoader(graphDatabaseWriter);
+		this.sqliteWriter = new SqliteWriter(tempDir.resolve("test.db"));
+		this.graphLoader = new HpoOntologyAnnotationLoader(graphDatabaseWriter, sqliteWriter);
 		this.graphDatabaseOperations = new GraphDatabaseOperations(graphDatabaseWriter);
 		graphLoader.load(Path.of("src/test/resources"), Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET));
 		this.hpoOntology = OntologyLoader.loadOntology(Path.of("src/test/resources/hp-simple-non-classified.json").toFile());
+	}
+
+	@Test
+	void sqliteTablesExist() throws Exception {
+		try (var statement = sqliteWriter.connection().createStatement()) {
+			var rs = statement.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='phenotype'");
+			assertTrue(rs.next());
+		}
 	}
 
 	@Test

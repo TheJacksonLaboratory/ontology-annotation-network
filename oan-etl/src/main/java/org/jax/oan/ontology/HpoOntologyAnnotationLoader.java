@@ -36,11 +36,13 @@ import static org.neo4j.driver.Values.parameters;
 public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	private final GraphDatabaseOperations graphDatabaseOperations;
 	private final GraphWriter graphWriter;
+	private final SqliteWriter sqliteWriter;
 	private static final Logger logger = LoggerFactory.getLogger(HpoOntologyAnnotationLoader.class);
 
-	public HpoOntologyAnnotationLoader(GraphWriter graphWriter) {
+	public HpoOntologyAnnotationLoader(GraphWriter graphWriter, SqliteWriter sqliteWriter) {
 		this.graphDatabaseOperations = new GraphDatabaseOperations(graphWriter);
 		this.graphWriter = graphWriter;
+		this.sqliteWriter = sqliteWriter;
 	}
 
 	@Override
@@ -58,6 +60,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	@Override
 	public void load(Path hpoDataDirectory, Set<DiseaseDatabase> databases) throws IOException, OntologyAnnotationNetworkException {
 		final HpoDataResolver dataResolver = HpoDataResolver.of(hpoDataDirectory);
+		SqliteSchema.createTables(sqliteWriter);
 		final Ontology hpoOntology = OntologyLoader.loadOntology(dataResolver.hpJson().toFile());
 		final Ontology mondoOntology = OntologyLoader.loadOntology(dataResolver.mondoJson().toFile(), "MONDO");
 		final HpoaDiseaseDataContainer diseases = HpoaDiseaseDataLoader.of(databases).loadDiseaseData(dataResolver.phenotypeAnnotations());
