@@ -61,13 +61,26 @@ class HpoOntologyAnnotationLoaderTest {
 	}
 
 	@Test
-	void phenotypes() {
-		try(Session session = driver.session()){
-			List<Node> nodes = session.run("MATCH (n: Phenotype) RETURN n")
-					.list(record -> record.get("n").asNode());
-			Node node = session.run("MATCH (n: Phenotype {id: 'HP:0000005'}) RETURN n").single().get("n").asNode();
-			assertEquals(8, nodes.size());
-			assertEquals("Fake term 5", node.get("name").asString());
+	void phenotypes() throws Exception {
+		try (var statement = sqliteWriter.connection().createStatement()) {
+			var all = statement.executeQuery("SELECT COUNT(*) AS c FROM phenotype");
+			all.next();
+			assertEquals(7, all.getInt("c"));
+
+			var one = statement.executeQuery("SELECT name FROM phenotype WHERE id = 'HP:0000005'");
+			one.next();
+			assertEquals("Fake term 5", one.getString("name"));
+		}
+	}
+
+	@Test
+	void phenotypeToPhenotype() throws Exception {
+		try (var statement = sqliteWriter.connection().createStatement()) {
+			var rs = statement.executeQuery(
+					"SELECT child_id FROM phenotype_child WHERE parent_id = 'HP:0000001' ORDER BY child_id");
+			List<String> children = new ArrayList<>();
+			while (rs.next()) children.add(rs.getString("child_id"));
+			assertEquals(List.of("HP:0000002", "HP:0000004"), children);
 		}
 	}
 
@@ -95,58 +108,98 @@ class HpoOntologyAnnotationLoaderTest {
 	}
 
 	@Test
-	void assayToPhenotype() {
-		try(Session session = driver.session()) {
-			List<Node> assay = session.run("MATCH (a: Assay) RETURN a")
-					.list(record -> record.get("a").asNode());
-			List<Node> queryAssayByPhenotype = session.run("MATCH (a: Assay)-[:MEASURES]-(p: Phenotype { id: 'HP:0000004'}) RETURN a").list(record ->
-					record.get("a").asNode());
-			assertEquals(3, assay.size());
-			assertEquals(2, queryAssayByPhenotype.size());
-		}
-
-	}
-
-	@Test
-	void diseaseToGene() {
-		try(Session session = driver.session()) {
-			List<Node> allAnnotations = session.run("MATCH (n: Disease)-[:EXPRESSES]-(g: Gene) RETURN DISTINCT g").list(record -> record.get("g").asNode());
-			List<Node> filteredAnnotations = session.run("MATCH (n: Disease {id: 'OMIM:619340'})-[:EXPRESSES]-(g: Gene) RETURN DISTINCT g")
-					.list(record -> record.get("g").asNode());
-
-			assertEquals(2, allAnnotations.size());
-			assertEquals(1, filteredAnnotations.size());
-			assertTrue(filteredAnnotations.stream().map(node -> node.get("id").asString()).toList().contains("NCBIGene:4905"));
+	void geneToPhenotype() throws Exception {
+		try (var statement = sqliteWriter.connection().createStatement()) {
+			var rs = statement.executeQuery(
+					"SELECT COUNT(*) AS c FROM gene_phenotype WHERE gene_id = 'NCBIGene:4905'");
+			rs.next();
+			assertTrue(rs.getInt("c") > 0);
 		}
 	}
 
 	@Test
-	void diseaseToPhenotype() {
-		try(Session session = driver.session()) {
-			List<Node> allAnnotations = session.run("MATCH " +
-							"(n: Disease)<-[:MANIFESTS]-(p: Phenotype)<-[:DESCRIBES {context: n.id}]-(pm: PhenotypeAnnotation) RETURN pm")
-					.list(record -> record.get("pm").asNode());
-			List<Node> filteredAnnotations = session.run("MATCH " +
-							"(n: Disease {id: 'OMIM:609153'})<-[:MANIFESTS]-(p: Phenotype)<-[:DESCRIBES {context: n.id}]-(pm: PhenotypeAnnotation) RETURN pm")
-					.list(record -> record.get("pm").asNode());
+	void assayToPhenotype() throws Exception {
+		try (var statement = sqliteWriter.connection().createStatement()) {
+			var all = statement.executeQuery("SELECT COUNT(*) AS c FROM assay");
+			all.next();
+			assertEquals(3, all.getInt("c"));
 
-			assertEquals(6, allAnnotations.size());
-			assertEquals(3, filteredAnnotations.size());
+			var joined = statement.executeQuery(
+					"SELECT COUNT(*) AS c FROM assay_phenotype WHERE phenotype_id = 'HP:0000004'");
+			joined.next();
+			assertEquals(2, joined.getInt("c"));
+
+			var idFormat = statement.executeQuery("SELECT id FROM assay LIMIT 1");
+			idFormat.next();
+			assertTrue(idFormat.getString("id").startsWith("LOINC:"));
 		}
 	}
 
 	@Test
-	void medicalActions(){
-		try(Session session = driver.session()) {
-			List<Node> allAnnotations = session.run("MATCH " +
-							"(n: Disease)<-[:MANIFESTS]-(p: Phenotype)<-[:DESCRIBES {context: n.id}]-(pm: PhenotypeAnnotation) RETURN pm")
-					.list(record -> record.get("pm").asNode());
-			List<Node> filteredAnnotations = session.run("MATCH " +
-							"(n: Disease {id: 'OMIM:609153'})<-[:MANIFESTS]-(p: Phenotype)<-[:DESCRIBES {context: n.id}]-(pm: PhenotypeAnnotation) RETURN pm")
-					.list(record -> record.get("pm").asNode());
+	void diseaseToGene() throws Exception {
+		try (var statement = sqliteWriter.connection().createStatement()) {
+			var all = statement.executeQuery("SELECT COUNT(DISTINCT gene_id) AS c FROM disease_gene");
+			all.next();
+			assertEquals(2, all.getInt("c"));
 
-			assertEquals(6, allAnnotations.size());
-			assertEquals(3, filteredAnnotations.size());
+			var filtered = statement.executeQuery(
+					"SELECT gene_id FROM disease_gene WHERE disease_id = 'OMIM:619340'");
+			List<String> geneIds = new ArrayList<>();
+			while (filtered.next()) geneIds.add(filtered.getString("gene_id"));
+			assertEquals(1, geneIds.size());
+			assertTrue(geneIds.contains("NCBIGene:4905"));
+		}
+	}
+
+	@Test
+	void diseaseToPhenotype() throws Exception {
+		try (var statement = sqliteWriter.connection().createStatement()) {
+			var all = statement.executeQuery("SELECT COUNT(*) AS c FROM disease_phenotype");
+			all.next();
+			assertEquals(6, all.getInt("c"));
+
+			var filtered = statement.executeQuery(
+					"SELECT COUNT(*) AS c FROM disease_phenotype WHERE disease_id = 'OMIM:609153'");
+			filtered.next();
+			assertEquals(3, filtered.getInt("c"));
+
+			var orpha = statement.executeQuery(
+					"SELECT COUNT(*) AS c FROM disease_phenotype WHERE disease_id = 'ORPHA:99999'");
+			orpha.next();
+			assertEquals(1, orpha.getInt("c"));
+		}
+	}
+
+	@Test
+	void medicalActions() throws Exception {
+		try (var statement = sqliteWriter.connection().createStatement()) {
+			var actions = statement.executeQuery("SELECT COUNT(*) AS c FROM medical_action");
+			actions.next();
+			assertEquals(6, actions.getInt("c"));
+
+			var positiveTargets = statement.executeQuery(
+					"SELECT COUNT(*) AS c FROM medical_action_target WHERE disease_id = 'OMIM:609153'");
+			positiveTargets.next();
+			assertEquals(1, positiveTargets.getInt("c"));
+
+			var positiveAnnotations = statement.executeQuery(
+					"SELECT COUNT(*) AS c FROM medical_action_annotation WHERE disease_id = 'OMIM:609153'");
+			positiveAnnotations.next();
+			assertEquals(1, positiveAnnotations.getInt("c"));
+
+			var bardetBiedlTargets = statement.executeQuery(
+					"SELECT COUNT(*) AS c FROM medical_action_target WHERE medical_action_id IN ('MAXO:0000088','MAXO:0000011','MAXO:0000930')");
+			bardetBiedlTargets.next();
+			assertEquals(0, bardetBiedlTargets.getInt("c"));
+
+			var noMatchTargets = statement.executeQuery(
+					"SELECT COUNT(*) AS c FROM medical_action_target WHERE medical_action_id IN ('MAXO:0001110','MAXO:0000885')");
+			noMatchTargets.next();
+			assertEquals(0, noMatchTargets.getInt("c"));
+
+			var totalAnnotations = statement.executeQuery("SELECT COUNT(*) AS c FROM medical_action_annotation");
+			totalAnnotations.next();
+			assertEquals(1, totalAnnotations.getInt("c"));
 		}
 	}
 
