@@ -4,7 +4,6 @@ import org.jax.oan.core.*;
 import org.jax.oan.exception.OntologyAnnotationNetworkDataException;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
-import org.jax.oan.graph.GraphDatabaseOperations;
 import org.monarchinitiative.phenol.annotations.formats.AnnotationReference;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoAssociationData;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoGeneAnnotation;
@@ -17,7 +16,6 @@ import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataContainer;
 import org.monarchinitiative.phenol.annotations.io.hpo.HpoaDiseaseDataLoader;
 import org.monarchinitiative.phenol.io.OntologyLoader;
 import org.monarchinitiative.phenol.ontology.data.*;
-import org.neo4j.driver.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,30 +26,19 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.neo4j.driver.Values.parameters;
-
 /**
  * This class loads all data related to HpoOntology. Connecting phenotypes, diseases and genes with metadata.
  */
 public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
-	private final GraphDatabaseOperations graphDatabaseOperations;
-	private final GraphWriter graphWriter;
 	private final SqliteWriter sqliteWriter;
 	private static final Logger logger = LoggerFactory.getLogger(HpoOntologyAnnotationLoader.class);
 
-	public HpoOntologyAnnotationLoader(GraphWriter graphWriter, SqliteWriter sqliteWriter) {
-		this.graphDatabaseOperations = new GraphDatabaseOperations(graphWriter);
-		this.graphWriter = graphWriter;
+	public HpoOntologyAnnotationLoader(SqliteWriter sqliteWriter) {
 		this.sqliteWriter = sqliteWriter;
 	}
 
-	@Override
-	public GraphWriter graphWriter() {
-		return this.graphWriter;
-	}
-
 	/**
-	 * Load Neo4J Graph with hpo data.
+	 * Load a SQLite database with hpo data.
 	 *
 	 * @param hpoDataDirectory the directory for hpo graph.
 	 * @throws IOException if a file can't be found
@@ -66,8 +53,6 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		final HpoaDiseaseDataContainer diseases = HpoaDiseaseDataLoader.of(databases).loadDiseaseData(dataResolver.phenotypeAnnotations());
 		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).orphaToGenePath(dataResolver.orpha2Gene()).mim2GeneMedgen(dataResolver.mim2geneMedgen())
 				.hpoDiseases(diseases).hgncCompleteSetArchive(dataResolver.hgncCompleteSet()).build();
-		graphDatabaseOperations.dropIndexes(OntologyModule.HPO);
-		graphDatabaseOperations.createIndexes(OntologyModule.HPO);
 		Map<TermId, String> categories = phenotypeToCategory(hpoOntology);
 		phenotypes(hpoOntology.getTerms(), categories);
 		diseases(diseases, mondoOntology.getTerms());
@@ -78,6 +63,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		diseaseToGene(associations);
 		assayToPhenotype(dataResolver.loinc());
 		medicalAction(dataResolver.maxoa(), diseases, mondoOntology.getTerms());
+		SqliteSchema.createIndexes(sqliteWriter);
 	}
 	void phenotypes(Collection<Term> phenotypes, Map<TermId, String> categories) throws OntologyAnnotationNetworkDataException {
 			logger.info("Loading Phenotypes...");

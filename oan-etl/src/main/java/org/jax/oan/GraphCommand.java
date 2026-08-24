@@ -1,14 +1,14 @@
 package org.jax.oan;
 
 import io.micronaut.configuration.picocli.PicocliRunner;
-import jakarta.inject.Inject;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
-import org.jax.oan.ontology.*;
+import org.jax.oan.ontology.HpoOntologyAnnotationLoader;
+import org.jax.oan.ontology.SqliteWriter;
 import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
-import org.neo4j.driver.Driver;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 
@@ -16,9 +16,6 @@ import java.util.Set;
 		description = "This is the default command and loads the graph based on selected modules.",
 		mixinStandardHelpOptions = true)
 public class GraphCommand implements Runnable {
-	@Inject
-	Driver driver;
-
 	@Option(names = {"-d", "--data"}, description = "The directory with the data.", required = true)
 	Path path;
 
@@ -33,13 +30,13 @@ public class GraphCommand implements Runnable {
 	}
 
 	public void run() {
-		try (SqliteWriter sqliteWriter = new SqliteWriter(output)) {
-			GraphDatabaseWriter graphDatabaseWriter = new GraphDatabaseWriter(driver);
-			if (truncate) {
-				graphDatabaseWriter.truncate();
+		try {
+			if (truncate && Files.exists(output)) {
+				Files.delete(output);
 			}
-
-			new HpoOntologyAnnotationLoader(graphDatabaseWriter, sqliteWriter).load(path, Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET));
+			try (SqliteWriter sqliteWriter = new SqliteWriter(output)) {
+				new HpoOntologyAnnotationLoader(sqliteWriter).load(path, Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET));
+			}
 		} catch (Exception e) {
 			throw new OntologyAnnotationNetworkRuntimeException(e);
 		}

@@ -1,9 +1,6 @@
 package org.jax.oan.ontology;
 
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import jakarta.inject.Inject;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
-import org.jax.oan.graph.GraphDatabaseOperations;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -13,9 +10,6 @@ import org.monarchinitiative.phenol.annotations.formats.EvidenceCode;
 import org.monarchinitiative.phenol.annotations.io.hpo.DiseaseDatabase;
 import org.monarchinitiative.phenol.io.OntologyLoader;
 import org.monarchinitiative.phenol.ontology.data.*;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.Session;
-import org.neo4j.driver.types.Node;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -25,17 +19,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@MicronautTest(environments = "test")
 class HpoOntologyAnnotationLoaderTest {
 
 	HpoOntologyAnnotationLoader graphLoader;
 
-	GraphDatabaseOperations graphDatabaseOperations;
-
 	SqliteWriter sqliteWriter;
-
-	@Inject
-	Driver driver;
 
 	@TempDir
 	static Path tempDir;
@@ -44,10 +32,8 @@ class HpoOntologyAnnotationLoaderTest {
 
 	@BeforeAll
 	void setup() throws OntologyAnnotationNetworkException, IOException {
-		final GraphDatabaseWriter graphDatabaseWriter = new GraphDatabaseWriter(this.driver);
 		this.sqliteWriter = new SqliteWriter(tempDir.resolve("test.db"));
-		this.graphLoader = new HpoOntologyAnnotationLoader(graphDatabaseWriter, sqliteWriter);
-		this.graphDatabaseOperations = new GraphDatabaseOperations(graphDatabaseWriter);
+		this.graphLoader = new HpoOntologyAnnotationLoader(sqliteWriter);
 		graphLoader.load(Path.of("src/test/resources"), Set.of(DiseaseDatabase.OMIM, DiseaseDatabase.ORPHANET));
 		this.hpoOntology = OntologyLoader.loadOntology(Path.of("src/test/resources/hp-simple-non-classified.json").toFile());
 	}
