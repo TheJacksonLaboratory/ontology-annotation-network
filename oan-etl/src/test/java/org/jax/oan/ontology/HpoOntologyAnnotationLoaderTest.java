@@ -77,7 +77,7 @@ class HpoOntologyAnnotationLoaderTest {
 			List<Node> nodes = session.run("MATCH (n: Disease) RETURN n")
 					.list(record -> record.get("n").asNode());
 			Node node = session.run("MATCH (n: Disease {id: 'OMIM:619340'}) RETURN n").single().get("n").asNode();
-			assertEquals(2, nodes.size());
+			assertEquals(3, nodes.size());
 			assertEquals("Developmental and epileptic encephalopathy 96", node.get("name").asString());
 			assertEquals("MONDO:0000001", node.get("mondoId").asString());
 		}
@@ -130,7 +130,7 @@ class HpoOntologyAnnotationLoaderTest {
 							"(n: Disease {id: 'OMIM:609153'})<-[:MANIFESTS]-(p: Phenotype)<-[:DESCRIBES {context: n.id}]-(pm: PhenotypeAnnotation) RETURN pm")
 					.list(record -> record.get("pm").asNode());
 
-			assertEquals(5, allAnnotations.size());
+			assertEquals(6, allAnnotations.size());
 			assertEquals(3, filteredAnnotations.size());
 		}
 	}
@@ -145,7 +145,7 @@ class HpoOntologyAnnotationLoaderTest {
 							"(n: Disease {id: 'OMIM:609153'})<-[:MANIFESTS]-(p: Phenotype)<-[:DESCRIBES {context: n.id}]-(pm: PhenotypeAnnotation) RETURN pm")
 					.list(record -> record.get("pm").asNode());
 
-			assertEquals(5, allAnnotations.size());
+			assertEquals(6, allAnnotations.size());
 			assertEquals(3, filteredAnnotations.size());
 		}
 	}
