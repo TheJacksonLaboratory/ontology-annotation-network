@@ -48,13 +48,16 @@ Testing
 
 #### OAN-REST
 
-An ontology module that exposes our graph via a REST-API.
+An ontology module that exposes our graph via a REST-API. Reads from the SQLite artifact
+produced by OAN-ETL -- no database server required.
 
 Running
+```
+     java -Dsqlite.path=<path-to-db-file> -jar <rest-jar>
+```
 
-```
-     java -jar <rest-jar>
-```
+`sqlite.path` defaults to `./oan.db` in the `dev` environment (the default when run
+without `-Dmicronaut.environments`) and `/app/oan.db` in `prod`.
 
 Testing
 
