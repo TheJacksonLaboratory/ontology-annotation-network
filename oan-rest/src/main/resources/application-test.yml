@@ -7,6 +7,8 @@ neo4j:
     password: password
     uri: bolt://localhost:9869
     username: neo4j
+sqlite:
+    path: ./target/test-fixture.db
 endpoints:
     all:
         path: monitor/

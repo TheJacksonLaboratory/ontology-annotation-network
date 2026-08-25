@@ -3,26 +3,19 @@ package org.jax.oan.repository;
 import jakarta.inject.Singleton;
 import org.jax.oan.core.*;
 import org.monarchinitiative.phenol.ontology.data.TermId;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.Record;
-import org.neo4j.driver.Result;
-import org.neo4j.driver.Transaction;
-import org.neo4j.driver.Value;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import static org.neo4j.driver.Values.parameters;
 
 @Singleton
 public class DiseaseRepository {
-	private final Driver driver;
+	private final Connection connection;
 
-	public DiseaseRepository(Driver driver) {
-		this.driver = driver;
+	public DiseaseRepository(SqliteConnectionProvider connectionProvider) {
+		this.connection = connectionProvider.connection();
 	}
-
 
 	/**
 	 * Find me a disease by query.
@@ -30,16 +23,17 @@ public class DiseaseRepository {
 	 * @return List of diseases matching the query sorted by if the disease starts with.
 	 */
 	public Optional<Disease> findDiseaseById(TermId termId){
-		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (d: Disease) WHERE d.id = $q RETURN d", parameters("q", termId.getValue()));
-			if (result.hasNext()){
-				Value value = result.single().get("d");
-				return Optional.of(new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(),
-						value.get("mondoId").asString(), value.get("description").asString()));
+		try (PreparedStatement statement = connection.prepareStatement(
+				"SELECT id, name, mondo_id, description FROM disease WHERE id = ?")) {
+			statement.setString(1, termId.getValue());
+			try (ResultSet rs = statement.executeQuery()) {
+				if (rs.next()) {
+					return Optional.of(new Disease(TermId.of(rs.getString("id")), rs.getString("name"),
+							rs.getString("mondo_id"), rs.getString("description")));
+				}
+				return Optional.empty();
 			}
-			return Optional.empty();
-		}
-		catch (Exception e){
+		} catch (Exception e) {
 			return Optional.empty();
 		}
 	}
@@ -50,17 +44,19 @@ public class DiseaseRepository {
 	 * @return List of diseases matching the query sorted by if the disease starts with.
 	 */
 	public Collection<Disease> findDiseases(String query) {
-		Collection<Disease> diseases = new ArrayList<>();
-		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (d: Disease) WHERE toLower(d.name) =~ $qe OR toLower(d.id) CONTAINS $q RETURN d", parameters("q", query.toLowerCase(), "qe", String.format("%s%s%s",".*", query.toLowerCase().replaceAll("\\s+", " ").replaceAll("[-\\s]", ".*"), ".*")));
-			while (result.hasNext()) {
-				Value value = result.next().get("d");
-				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(),
-						value.get("mondoId").asString(), value.get("description").asString());
-				diseases.add(disease);
+		List<Disease> diseases = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(
+				"SELECT id, name, mondo_id, description FROM disease WHERE LOWER(name) LIKE ? OR LOWER(id) LIKE ?")) {
+			String like = "%" + query.toLowerCase() + "%";
+			statement.setString(1, like);
+			statement.setString(2, like);
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					diseases.add(new Disease(TermId.of(rs.getString("id")), rs.getString("name"),
+							rs.getString("mondo_id"), rs.getString("description")));
+				}
 			}
-		}
-		catch (Exception e){
+		} catch (Exception e) {
 			return Collections.emptyList();
 		}
 		return diseases.stream().sorted(Comparator.comparing((Disease d) -> !d.getName().toLowerCase()
@@ -73,16 +69,16 @@ public class DiseaseRepository {
 	 * @return List of genes or empty list
 	 */
 	public Collection<Gene> findGenesByDisease(TermId termId) {
-		Collection<Gene> genes = new ArrayList<>();
-		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (d: Disease {id: $id})-[:EXPRESSES]-(g: Gene) RETURN g", parameters("id", termId.getValue()));
-			while (result.hasNext()) {
-				Value value = result.next().get("g");
-				Gene gene = new Gene(TermId.of(value.get("id").asString()), value.get("name").asString());
-				genes.add(gene);
+		List<Gene> genes = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(
+				"SELECT g.id, g.name FROM disease_gene dg JOIN gene g ON g.id = dg.gene_id WHERE dg.disease_id = ?")) {
+			statement.setString(1, termId.getValue());
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					genes.add(new Gene(TermId.of(rs.getString("id")), rs.getString("name")));
+				}
 			}
-		}
-		catch (Exception e){
+		} catch (Exception e) {
 			return Collections.emptyList();
 		}
 		return genes;
@@ -94,19 +90,22 @@ public class DiseaseRepository {
 	 * @return List of diseases or empty list
 	 */
 	public Collection<PhenotypeExtended> findPhenotypesByDisease(TermId termId){
-		Collection<PhenotypeExtended> phenotypes = new ArrayList<>();
-		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (d: Disease {id: $id})<-[:MANIFESTS]-(p: Phenotype)-[:DESCRIBES {context: $id }]-(pm: PhenotypeAnnotation) RETURN p, pm", parameters("id", termId.getValue()));
-			while (result.hasNext()) {
-				Record r = result.next();
-				Value p = r.get("p");
-				Value pm = r.get("pm");
-				PhenotypeMetadata phenotypeMetadata = new PhenotypeMetadata(pm.get("sex").asString(), pm.get("onset").asString(), pm.get("frequency").asString(), Arrays.stream(pm.get("sources").asString().split(";")).filter(Predicate.not(String::isBlank)).collect(Collectors.toList()));
-				PhenotypeExtended phenotype = new PhenotypeExtended(TermId.of(p.get("id").asString()), p.get("name").asString(), p.get("category").asString(), phenotypeMetadata);
-				phenotypes.add(phenotype);
+		List<PhenotypeExtended> phenotypes = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(
+				"SELECT p.id, p.name, p.category, dp.sex, dp.onset, dp.frequency, dp.sources " +
+						"FROM disease_phenotype dp JOIN phenotype p ON p.id = dp.phenotype_id WHERE dp.disease_id = ?")) {
+			statement.setString(1, termId.getValue());
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					List<String> sources = Arrays.stream(rs.getString("sources").split(";"))
+							.filter(s -> !s.isBlank()).toList();
+					PhenotypeMetadata metadata = new PhenotypeMetadata(rs.getString("sex"), rs.getString("onset"),
+							rs.getString("frequency"), sources);
+					phenotypes.add(new PhenotypeExtended(TermId.of(rs.getString("id")), rs.getString("name"),
+							rs.getString("category"), metadata));
+				}
 			}
-		}
-		catch (Exception e){
+		} catch (Exception e) {
 			return Collections.emptyList();
 		}
 		return phenotypes;
@@ -118,32 +117,43 @@ public class DiseaseRepository {
 	 * @return List of diseases or empty list
 	 */
 	public Collection<MedicalActionTargetExtended> findMedicalActionsByDisease(TermId termId){
-		Collection<MedicalActionTargetExtended> actions = new ArrayList<>();
-		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (p: Phenotype)-[c:CLARIFIES {context: $id}]-(m: MedicalAction) RETURN m, collect(distinct p) as p, collect(distinct c.by) as c", parameters("id", termId.getValue()));
-			while (result.hasNext()) {
-				List<OntologyEntity> targets = new ArrayList<>();
-				List<MedicalActionRelation> relations = new ArrayList<>();
-				Record r = result.next();
-				Value m = r.get("m");
+		Map<String, String> actionNames = new LinkedHashMap<>();
+		Map<String, List<OntologyEntity>> actionTargets = new LinkedHashMap<>();
+		Map<String, Set<MedicalActionRelation>> actionRelations = new LinkedHashMap<>();
+		try (PreparedStatement statement = connection.prepareStatement(
+				"SELECT mat.medical_action_id, ma.name AS action_name, mat.phenotype_id, p.name AS phenotype_name, mat.relation " +
+						"FROM medical_action_target mat " +
+						"JOIN medical_action ma ON ma.id = mat.medical_action_id " +
+						"JOIN phenotype p ON p.id = mat.phenotype_id " +
+						"WHERE mat.disease_id = ?")) {
+			statement.setString(1, termId.getValue());
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					String actionId = rs.getString("medical_action_id");
+					String phenotypeId = rs.getString("phenotype_id");
+					actionNames.putIfAbsent(actionId, rs.getString("action_name"));
 
-				// The root node of hpo serves as a way to annotate to the disease being referenced
-				// instead of a phenotype of the disease. We should map back before we return it.
-				r.get("p").values().forEach(t -> {
-					if (t.get("id").asString().contains("HP:0000118")){
-						targets.add(new Phenotype(termId, t.get("name").asString()));
-					} else {
-						targets.add(new Phenotype(TermId.of(t.get("id").asString()), t.get("name").asString()));
+					// The root node of hpo serves as a way to annotate to the disease being referenced
+					// instead of a phenotype of the disease. We should map back before we return it.
+					OntologyEntity target = phenotypeId.equals("HP:0000118")
+							? new Phenotype(termId, rs.getString("phenotype_name"))
+							: new Phenotype(TermId.of(phenotypeId), rs.getString("phenotype_name"));
+					List<OntologyEntity> targets = actionTargets.computeIfAbsent(actionId, k -> new ArrayList<>());
+					if (!targets.contains(target)) {
+						targets.add(target);
 					}
-				});
-				r.get("c").values().forEach(t -> {
-					relations.add(MedicalActionRelation.valueOf(t.asString()));
-				});
-				actions.add(new MedicalActionTargetExtended(TermId.of(m.get("id").asString()), m.get("name").asString(), relations, targets ));
+					actionRelations.computeIfAbsent(actionId, k -> new LinkedHashSet<>())
+							.add(MedicalActionRelation.valueOf(rs.getString("relation")));
+				}
 			}
-		}
-		catch (Exception e){
+		} catch (Exception e) {
 			return Collections.emptyList();
+		}
+
+		List<MedicalActionTargetExtended> actions = new ArrayList<>();
+		for (String actionId : actionNames.keySet()) {
+			actions.add(new MedicalActionTargetExtended(TermId.of(actionId), actionNames.get(actionId),
+					new ArrayList<>(actionRelations.get(actionId)), actionTargets.get(actionId)));
 		}
 		return actions;
 	}
