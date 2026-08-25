@@ -3,21 +3,25 @@ package org.jax.oan.repository;
 import jakarta.inject.Singleton;
 import org.jax.oan.core.*;
 import org.monarchinitiative.phenol.ontology.data.TermId;
-import org.neo4j.driver.*;
-import org.neo4j.driver.Record;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.*;
-
-import static org.neo4j.driver.Values.parameters;
 
 @Singleton
 public class PhenotypeRepository {
 
-	private final Driver driver;
+	private final Connection connection;
 
-	public PhenotypeRepository(Driver driver) {
-		this.driver = driver;
+	public PhenotypeRepository(SqliteConnectionProvider connectionProvider) {
+		this.connection = connectionProvider.connection();
 	}
+
+	private static final String DESCENDANTS_CTE =
+			"WITH RECURSIVE descendants(id) AS (" +
+					"SELECT ? UNION SELECT pc.child_id FROM phenotype_child pc JOIN descendants d ON pc.parent_id = d.id" +
+					") ";
 
 	/**
 	 * Give me all the diseases that manifest this phenotype and its descendants.
@@ -26,17 +30,19 @@ public class PhenotypeRepository {
 	 */
 	public Collection<Disease> findDiseasesByTerm(TermId termId){
 		List<Disease> diseases = new ArrayList<>();
-		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} with nodes MATCH (d: Disease)<-[:MANIFESTS]-(p: Phenotype)\n" +
-					"WHERE p.id IN nodes RETURN DISTINCT d", parameters("id", termId.getValue()));
-			while (result.hasNext()) {
-				Value value = result.next().get("d");
-				Disease disease = new Disease(TermId.of(value.get("id").asString()),
-						value.get("name").asString(), value.get("mondoId").asString(), null);
-				diseases.add(disease);
+		try (PreparedStatement statement = connection.prepareStatement(DESCENDANTS_CTE +
+				"SELECT DISTINCT d.id, d.name, d.mondo_id " +
+				"FROM descendants desc " +
+				"CROSS JOIN disease_phenotype dp ON dp.phenotype_id = desc.id " +
+				"JOIN disease d ON d.id = dp.disease_id")) {
+			statement.setString(1, termId.getValue());
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					diseases.add(new Disease(TermId.of(rs.getString("id")), rs.getString("name"),
+							rs.getString("mondo_id"), null));
+				}
 			}
-		}
-		catch (Exception e){
+		} catch (Exception e){
 			return Collections.emptyList();
 		}
 		return diseases;
@@ -49,17 +55,19 @@ public class PhenotypeRepository {
 	 */
 	public Collection<Gene> findGenesByTerm(TermId termId) {
 		List<Gene> genes = new ArrayList<>();
-		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("call {MATCH (k: Phenotype {id: $id})-[:HAS_CHILD *0..]->(q:Phenotype) with collect(distinct k.id) + collect(q.id) as nodes return nodes} call { with nodes MATCH (d: Disease)<-[:MANIFESTS]-(p: Phenotype)" +
-					" WHERE p.id IN nodes RETURN d as diseases} with diseases MATCH (diseases)-[:EXPRESSES]-(g: Gene) RETURN DISTINCT g", parameters("id", termId.getValue()));
-
-			while (result.hasNext()) {
-				Value value = result.next().get("g");
-				Gene gene = new Gene(TermId.of(value.get("id").asString()), value.get("name").asString());
-				genes.add(gene);
+		try (PreparedStatement statement = connection.prepareStatement(DESCENDANTS_CTE +
+				"SELECT DISTINCT g.id, g.name " +
+				"FROM descendants desc " +
+				"CROSS JOIN disease_phenotype dp ON dp.phenotype_id = desc.id " +
+				"JOIN disease_gene dg ON dg.disease_id = dp.disease_id " +
+				"JOIN gene g ON g.id = dg.gene_id")) {
+			statement.setString(1, termId.getValue());
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					genes.add(new Gene(TermId.of(rs.getString("id")), rs.getString("name")));
+				}
 			}
-		}
-		catch (Exception e){
+		} catch (Exception e){
 			return Collections.emptyList();
 		}
 		return genes;
@@ -71,17 +79,16 @@ public class PhenotypeRepository {
 	 * @return List of assays or empty list
 	 */
 	public Collection<Assay> findAssaysByTerm(TermId termId){
-		Collection<Assay> assays = new ArrayList<>();
-		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (a: Assay)-[:MEASURES]-(p: Phenotype {id: $id}) RETURN a", parameters("id", termId.getValue()));
-
-			while (result.hasNext()) {
-				Value value = result.next().get("a");
-				Assay assay = new Assay(TermId.of(String.format("LOINC:%s", value.get("id").asString())), value.get("name").asString());
-				assays.add(assay);
+		List<Assay> assays = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(
+				"SELECT a.id, a.name FROM assay_phenotype ap JOIN assay a ON a.id = ap.assay_id WHERE ap.phenotype_id = ?")) {
+			statement.setString(1, termId.getValue());
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					assays.add(new Assay(TermId.of(rs.getString("id")), rs.getString("name")));
+				}
 			}
-		}
-		catch (Exception e){
+		} catch (Exception e){
 			return Collections.emptyList();
 		}
 		return assays;
@@ -93,25 +100,34 @@ public class PhenotypeRepository {
 	 * @return List of assays or empty list
 	 */
 	public Collection<MedicalActionSourceExtended> findMedicalActionsByTerm(TermId termId){
-		Collection<MedicalActionSourceExtended> medicalActions = new ArrayList<>();
-		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (p:Phenotype {id: $id})-[c:CLARIFIES]-(m:MedicalAction)<-[d:DESCRIBES]-(mm:MedicalActionAnnotation) WHERE d.pcontext = p.id return p, m, collect(distinct c.by) as t, collect(distinct mm) as mm", parameters("id", termId.getValue()));
-
-			while (result.hasNext()) {
-				List<MedicalActionRelation> relations = new ArrayList<>();
-				List<String> sources = new ArrayList<>();
-				Record record = result.next();
-				Value subject = record.get("m");
-
-				record.get("mm").values().forEach(x -> sources.add(x.get("source").asString()));
-				record.get("t").values().forEach(t -> {
-					relations.add(MedicalActionRelation.valueOf(t.asString()));
-				});
-				medicalActions.add(new MedicalActionSourceExtended(TermId.of(subject.get("id").asString()), subject.get("name").asString(), relations, sources));
+		Map<String, String> actionNames = new LinkedHashMap<>();
+		Map<String, Set<MedicalActionRelation>> actionRelations = new LinkedHashMap<>();
+		Map<String, Set<String>> actionSources = new LinkedHashMap<>();
+		try (PreparedStatement statement = connection.prepareStatement(
+				"SELECT mat.medical_action_id, ma.name AS action_name, mat.relation, maa.source " +
+						"FROM medical_action_target mat " +
+						"JOIN medical_action ma ON ma.id = mat.medical_action_id " +
+						"JOIN medical_action_annotation maa ON maa.medical_action_id = mat.medical_action_id AND maa.phenotype_id = mat.phenotype_id " +
+						"WHERE mat.phenotype_id = ?")) {
+			statement.setString(1, termId.getValue());
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					String actionId = rs.getString("medical_action_id");
+					actionNames.putIfAbsent(actionId, rs.getString("action_name"));
+					actionRelations.computeIfAbsent(actionId, k -> new LinkedHashSet<>())
+							.add(MedicalActionRelation.valueOf(rs.getString("relation")));
+					actionSources.computeIfAbsent(actionId, k -> new LinkedHashSet<>())
+							.add(rs.getString("source"));
+				}
 			}
-		}
-		catch (Exception e){
+		} catch (Exception e){
 			return Collections.emptyList();
+		}
+
+		List<MedicalActionSourceExtended> medicalActions = new ArrayList<>();
+		for (String actionId : actionNames.keySet()) {
+			medicalActions.add(new MedicalActionSourceExtended(TermId.of(actionId), actionNames.get(actionId),
+					new ArrayList<>(actionRelations.get(actionId)), new ArrayList<>(actionSources.get(actionId))));
 		}
 		return medicalActions;
 	}
