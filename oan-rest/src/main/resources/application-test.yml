@@ -1,12 +1,6 @@
 micronaut:
     server:
         context-path: /api/network
-neo4j:
-    embedded:
-        ephemeral: true
-    password: password
-    uri: bolt://localhost:9869
-    username: neo4j
 sqlite:
     path: ./target/test-fixture.db
 endpoints:
