@@ -23,21 +23,17 @@ Package modules using
 ```
 
 #### OAN-ETL
-An ontology module to load our graph data which includes phenotypes, diseases, genes, assays.
+A CLI module that loads phenotypes, diseases, genes, and assays into a SQLite database --
+no database server required.
 
-Start neo4j
+Running the load
 ```
- docker pull neo4j:community-bullseye
- docker run -d -p7474:7474 -p7687:7687 -v ./neo4j/data:/data  --env NEO4J_AUTH=neo4j/password neo4j:community-bullseye
-```
+    # Fetch input data
+    bash update.sh data/
 
-Running data load (~4min)
-```
-    # Create data
-    bash update.sh
-    
-    # Load data into graph
-    java -jar <etl-jar> -d=data/
+    # Build the SQLite artifact (-t writes a fresh file, deleting any existing one at
+    # the output path first)
+    java -jar <etl-jar> -d data/ -o oan.db -t
 ```
 
 Testing

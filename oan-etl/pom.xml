@@ -13,7 +13,7 @@
     <artifactId>oan-etl</artifactId>
     <name>oan-etl</name>
 
-    <description>oan-etl is a micronaut cli application for loading ontology annotation to neo4j</description>
+    <description>oan-etl is a micronaut cli application for loading ontology annotation into a SQLite database</description>
 
     <dependencies>
         <dependency>
@@ -34,10 +34,6 @@
             <artifactId>micronaut-serde-jackson</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.micronaut.neo4j</groupId>
-            <artifactId>micronaut-neo4j-bolt</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.monarchinitiative.phenol</groupId>
             <artifactId>phenol-io</artifactId>
         </dependency>
@@ -48,6 +44,11 @@
         <dependency>
             <groupId>org.monarchinitiative.phenol</groupId>
             <artifactId>phenol-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.45.1.0</version>
         </dependency>
         <!-- Test -->
         <dependency>
@@ -78,11 +79,6 @@
         <dependency>
             <groupId>io.micronaut</groupId>
             <artifactId>micronaut-inject-java</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.neo4j.test</groupId>
-            <artifactId>neo4j-harness</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
