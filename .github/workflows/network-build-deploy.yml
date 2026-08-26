@@ -1,4 +1,4 @@
-name: Deploy Ontology Annotation Network Rest
+name: Build & Deploy Ontology Annotation Network
 on:
   workflow_dispatch:
 env:
@@ -9,7 +9,7 @@ env:
   GCLOUD_REGISTRY_IMAGE_ENV: docker
   GCLOUD_REGISTRY_IMAGE_PROJECT: ontology
   SERVICE_NAME: ontology-annotation-network-rest
-  
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,6 +43,7 @@ jobs:
 
       - name: Setup Google Cloud CLI
         uses: 'google-github-actions/setup-gcloud@v1'
+
       - name: Get project version
         run: |
           echo "PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
@@ -51,21 +52,28 @@ jobs:
         run: |
           echo "DOCKER_IMAGE=$GCLOUD_GCR/$GCLOUD_REGISTRY_PROJECT_ID/$GCLOUD_REGISTRY_IMAGE_ENV/$GCLOUD_REGISTRY_IMAGE_PROJECT/$SERVICE_NAME" >> $GITHUB_ENV
 
-      - name: Maven Package Rest Only
-        run: mvn package -pl oan-rest -am
+      - name: Maven Package ETL
+        run: mvn package -pl oan-etl -am -DskipTests=true
+
+      - name: Fetch ontology data
+        run: sh oan-etl/update.sh oan-etl/data/
+
+      - name: Build the SQLite artifact
+        run: |
+          java -jar oan-etl/target/oan-etl-${PROJECT_VERSION}.jar -d oan-etl/data -o oan-rest/oan.db -t
+
+      - name: Maven Package Rest
+        run: mvn package -pl oan-rest -am -DskipTests=true
 
       - name: Docker Login
         run: |
           gcloud auth configure-docker "${GCLOUD_GCR}"
 
       - name: Build And Push Docker Image
-        env:
-          TESTCONTAINERS_RYUK_DISABLED: true
         run: |
-          echo "$DOCKER_IMAGE"
           cd oan-rest/
           docker build . --build-arg="VERSION_ARG=${PROJECT_VERSION}" --build-arg="MICRONAUT_ENV_ARG=prod" --tag="${DOCKER_IMAGE}:${PROJECT_VERSION}"
-          docker push "${DOCKER_IMAGE}:${PROJECT_VERSION}" 
+          docker push "${DOCKER_IMAGE}:${PROJECT_VERSION}"
 
       - name: Tag Artifact Registry
         run: |
@@ -73,10 +81,7 @@ jobs:
 
       - name: Deploy Cloud Run
         run: |
-          DOCKER_IMAGE_REPOSITORY=$(docker images --format "{{.Repository}}" | grep ontology-annotation-network)
-          DOCK_IMAGE_DEPLOY=$(docker images --format "{{.Repository}}:{{.Tag}}" "${DOCKER_IMAGE_REPOSITORY}" )
-
           gcloud run deploy $SERVICE_NAME --quiet \
-            --image "${DOCK_IMAGE_DEPLOY}" --project "${GCLOUD_PROJECT_ID}" \
+            --image "${DOCKER_IMAGE}:${PROJECT_VERSION}" --project "${GCLOUD_PROJECT_ID}" \
             --region "${GCLOUD_REGION}" --platform managed --allow-unauthenticated --format json \
-            --memory 4Gi --cpu 2 --min-instances 1 --max-instances 1 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
+            --memory 4Gi --cpu 2 --min-instances 1 --max-instances 5 --no-cpu-throttling --ingress internal-and-cloud-load-balancing --service-account "${GCLOUD_SERVICE_ACCOUNT}"
