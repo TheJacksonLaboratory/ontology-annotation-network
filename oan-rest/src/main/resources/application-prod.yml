@@ -19,7 +19,5 @@ micronaut:
 endpoints:
     all:
         path: monitor/
-neo4j:
-    password: password
-    uri: bolt://10.142.0.7:7687
-    username: neo4j
+sqlite:
+    path: /app/oan.db

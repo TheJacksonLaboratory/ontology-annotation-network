@@ -5,24 +5,20 @@ import org.jax.oan.core.Disease;
 import org.jax.oan.core.Gene;
 import org.jax.oan.core.Phenotype;
 import org.monarchinitiative.phenol.ontology.data.TermId;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.Result;
-import org.neo4j.driver.Transaction;
-import org.neo4j.driver.Value;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.*;
-
-import static org.neo4j.driver.Values.parameters;
 
 @Singleton
 public class GeneRepository {
 
-	private final Driver driver;
+	private final Connection connection;
 
-	public GeneRepository(Driver driver) {
-		this.driver = driver;
+	public GeneRepository(SqliteConnectionProvider connectionProvider) {
+		this.connection = connectionProvider.connection();
 	}
-
 
 	/**
 	 * Find me a gene by query.
@@ -30,16 +26,17 @@ public class GeneRepository {
 	 * @return List of genes matching the query sorted by if the gene starts with query.
 	 */
 	public Collection<Gene> findGenes(String query){
-		Collection<Gene> genes = new ArrayList<>();
-		try (Transaction tx = driver.session().beginTransaction()) {
-				Result result = tx.run("MATCH (g: Gene) WHERE toLower(g.name) =~ $qe OR g.id CONTAINS $q RETURN g", parameters("q", query, "qe", String.format("%s%s%s",".*", query.toLowerCase().replaceAll("\\s+", " ").replaceAll("[-\\s]", ".*"), ".*")));
-				while (result.hasNext()) {
-					Value value = result.next().get("g");
-					Gene gene = new Gene(TermId.of(value.get("id").asString()), value.get("name").asString());
-					genes.add(gene);
+		List<Gene> genes = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(
+				"SELECT id, name FROM gene WHERE LOWER(name) LIKE ? OR id LIKE ?")) {
+			statement.setString(1, "%" + query.toLowerCase() + "%");
+			statement.setString(2, "%" + query + "%");
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					genes.add(new Gene(TermId.of(rs.getString("id")), rs.getString("name")));
 				}
-		}
-		catch (Exception e){
+			}
+		} catch (Exception e){
 			return Collections.emptyList();
 		}
 		return genes.stream().sorted(Comparator.comparing((Gene g) -> !g.getName().toLowerCase()
@@ -52,13 +49,14 @@ public class GeneRepository {
 	 * @return List of phenotypes or empty list
 	 */
 	public Collection<Phenotype> findPhenotypesByGene(TermId termId){
-		Collection<Phenotype> phenotypes = new ArrayList<>();
-		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (g: Gene {id: $id})-[:DETERMINES]-(p:Phenotype) RETURN p", parameters("id", termId.getValue()));
-			while (result.hasNext()) {
-				Value value = result.next().get("p");
-				Phenotype phenotype = new Phenotype(TermId.of(value.get("id").asString()), value.get("name").asString());
-				phenotypes.add(phenotype);
+		List<Phenotype> phenotypes = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(
+				"SELECT p.id, p.name FROM gene_phenotype gp JOIN phenotype p ON p.id = gp.phenotype_id WHERE gp.gene_id = ?")) {
+			statement.setString(1, termId.getValue());
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					phenotypes.add(new Phenotype(TermId.of(rs.getString("id")), rs.getString("name")));
+				}
 			}
 		} catch (Exception e){
 			return Collections.emptyList();
@@ -73,16 +71,16 @@ public class GeneRepository {
 	 */
 	public Collection<Disease> findDiseasesByGene(TermId termId) {
 		List<Disease> diseases = new ArrayList<>();
-		try (Transaction tx = driver.session().beginTransaction()) {
-			Result result = tx.run("MATCH (d: Disease)-[:EXPRESSES]->(g: Gene {id: $id}) RETURN d", parameters("id", termId.getValue()));
-			while (result.hasNext()) {
-				Value value = result.next().get("d");
-				Disease disease = new Disease(TermId.of(value.get("id").asString()), value.get("name").asString(),
-						value.get("mondoId").asString(), null);
-				diseases.add(disease);
+		try (PreparedStatement statement = connection.prepareStatement(
+				"SELECT d.id, d.name, d.mondo_id FROM disease_gene dg JOIN disease d ON d.id = dg.disease_id WHERE dg.gene_id = ?")) {
+			statement.setString(1, termId.getValue());
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					diseases.add(new Disease(TermId.of(rs.getString("id")), rs.getString("name"),
+							rs.getString("mondo_id"), null));
+				}
 			}
-		}
-		catch (Exception e){
+		} catch (Exception e){
 			return Collections.emptyList();
 		}
 		return diseases;
