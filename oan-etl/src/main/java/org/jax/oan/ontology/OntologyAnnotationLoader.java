@@ -8,6 +8,5 @@ import java.nio.file.Path;
 import java.util.Set;
 
 public interface OntologyAnnotationLoader {
-	GraphWriter graphWriter();
 	void load(Path directory, Set<DiseaseDatabase> databases) throws IOException, OntologyAnnotationNetworkException;
 }

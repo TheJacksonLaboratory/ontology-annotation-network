@@ -49,6 +49,40 @@
       },
       "type" : "CLASS",
       "lbl" : "Fake disease 2"
+    }, {
+      "id" : "http://purl.obolibrary.org/obo/MONDO_0008854",
+      "meta" : {
+        "definition" : {
+          "val" : "Definition for MONDO:0008854.",
+          "xrefs" : []
+        },
+        "xrefs" : [{
+          "val" : "Orphanet:99999"
+        }],
+        "basicPropertyValues" : [ {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#hasOBONamespace",
+          "val" : "disease_ontology"
+        } ]
+      },
+      "type" : "CLASS",
+      "lbl" : "Bardet-Biedl Syndrome 1"
+    }, {
+      "id" : "http://purl.obolibrary.org/obo/MONDO_0009367",
+      "meta" : {
+        "definition" : {
+          "val" : "Definition for MONDO:0009367.",
+          "xrefs" : []
+        },
+        "xrefs" : [{
+          "val" : "OMIM:609153"
+        }],
+        "basicPropertyValues" : [ {
+          "pred" : "http://www.geneontology.org/formats/oboInOwl#hasOBONamespace",
+          "val" : "disease_ontology"
+        } ]
+      },
+      "type" : "CLASS",
+      "lbl" : "Mckusick-kaufman Syndrome"
     }],
     "edges" : [  {
       "sub" : "http://purl.obolibrary.org/obo/MONDO_0000002",
