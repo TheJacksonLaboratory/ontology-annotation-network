@@ -6,6 +6,8 @@ import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.exceptions.HttpStatusException;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.http.server.types.files.SystemFile;
 import io.micronaut.serde.annotation.SerdeImport;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,6 +19,7 @@ import org.monarchinitiative.phenol.base.PhenolRuntimeException;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
 @Controller("/annotation")
+@ExecuteOn(TaskExecutors.BLOCKING)
 @SerdeImport(Disease.class)
 @SerdeImport(Gene.class)
 @SerdeImport(Phenotype.class)

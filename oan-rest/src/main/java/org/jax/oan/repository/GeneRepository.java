@@ -1,6 +1,8 @@
 package org.jax.oan.repository;
 
 import jakarta.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jax.oan.core.Disease;
 import org.jax.oan.core.Gene;
 import org.jax.oan.core.Phenotype;
@@ -13,11 +15,12 @@ import java.util.*;
 
 @Singleton
 public class GeneRepository {
+	private static final Logger log = LoggerFactory.getLogger(GeneRepository.class);
 
-	private final Connection connection;
+	private final SqliteConnectionProvider connectionProvider;
 
 	public GeneRepository(SqliteConnectionProvider connectionProvider) {
-		this.connection = connectionProvider.connection();
+		this.connectionProvider = connectionProvider;
 	}
 
 	/**
@@ -27,7 +30,8 @@ public class GeneRepository {
 	 */
 	public Collection<Gene> findGenes(String query){
 		List<Gene> genes = new ArrayList<>();
-		try (PreparedStatement statement = connection.prepareStatement(
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT id, name FROM gene WHERE LOWER(name) LIKE ? OR id LIKE ?")) {
 			statement.setString(1, "%" + query.toLowerCase() + "%");
 			statement.setString(2, "%" + query + "%");
@@ -36,7 +40,8 @@ public class GeneRepository {
 					genes.add(new Gene(TermId.of(rs.getString("id")), rs.getString("name")));
 				}
 			}
-		} catch (Exception e){
+		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
 		return genes.stream().sorted(Comparator.comparing((Gene g) -> !g.getName().toLowerCase()
@@ -50,7 +55,8 @@ public class GeneRepository {
 	 */
 	public Collection<Phenotype> findPhenotypesByGene(TermId termId){
 		List<Phenotype> phenotypes = new ArrayList<>();
-		try (PreparedStatement statement = connection.prepareStatement(
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT p.id, p.name FROM gene_phenotype gp JOIN phenotype p ON p.id = gp.phenotype_id WHERE gp.gene_id = ?")) {
 			statement.setString(1, termId.getValue());
 			try (ResultSet rs = statement.executeQuery()) {
@@ -58,7 +64,8 @@ public class GeneRepository {
 					phenotypes.add(new Phenotype(TermId.of(rs.getString("id")), rs.getString("name")));
 				}
 			}
-		} catch (Exception e){
+		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
 		return phenotypes;
@@ -71,7 +78,8 @@ public class GeneRepository {
 	 */
 	public Collection<Disease> findDiseasesByGene(TermId termId) {
 		List<Disease> diseases = new ArrayList<>();
-		try (PreparedStatement statement = connection.prepareStatement(
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT d.id, d.name, d.mondo_id FROM disease_gene dg JOIN disease d ON d.id = dg.disease_id WHERE dg.gene_id = ?")) {
 			statement.setString(1, termId.getValue());
 			try (ResultSet rs = statement.executeQuery()) {
@@ -80,7 +88,8 @@ public class GeneRepository {
 							rs.getString("mondo_id"), null));
 				}
 			}
-		} catch (Exception e){
+		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
 		return diseases;

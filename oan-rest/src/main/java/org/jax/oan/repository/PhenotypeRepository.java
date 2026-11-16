@@ -1,6 +1,8 @@
 package org.jax.oan.repository;
 
 import jakarta.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jax.oan.core.*;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
@@ -11,11 +13,12 @@ import java.util.*;
 
 @Singleton
 public class PhenotypeRepository {
+	private static final Logger log = LoggerFactory.getLogger(PhenotypeRepository.class);
 
-	private final Connection connection;
+	private final SqliteConnectionProvider connectionProvider;
 
 	public PhenotypeRepository(SqliteConnectionProvider connectionProvider) {
-		this.connection = connectionProvider.connection();
+		this.connectionProvider = connectionProvider;
 	}
 
 	private static final String DESCENDANTS_CTE =
@@ -30,7 +33,8 @@ public class PhenotypeRepository {
 	 */
 	public Collection<Disease> findDiseasesByTerm(TermId termId){
 		List<Disease> diseases = new ArrayList<>();
-		try (PreparedStatement statement = connection.prepareStatement(DESCENDANTS_CTE +
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(DESCENDANTS_CTE +
 				"SELECT DISTINCT d.id, d.name, d.mondo_id " +
 				"FROM descendants desc " +
 				"CROSS JOIN disease_phenotype dp ON dp.phenotype_id = desc.id " +
@@ -42,7 +46,8 @@ public class PhenotypeRepository {
 							rs.getString("mondo_id"), null));
 				}
 			}
-		} catch (Exception e){
+		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
 		return diseases;
@@ -55,7 +60,8 @@ public class PhenotypeRepository {
 	 */
 	public Collection<Gene> findGenesByTerm(TermId termId) {
 		List<Gene> genes = new ArrayList<>();
-		try (PreparedStatement statement = connection.prepareStatement(DESCENDANTS_CTE +
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(DESCENDANTS_CTE +
 				"SELECT DISTINCT g.id, g.name " +
 				"FROM descendants desc " +
 				"CROSS JOIN disease_phenotype dp ON dp.phenotype_id = desc.id " +
@@ -67,7 +73,8 @@ public class PhenotypeRepository {
 					genes.add(new Gene(TermId.of(rs.getString("id")), rs.getString("name")));
 				}
 			}
-		} catch (Exception e){
+		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
 		return genes;
@@ -80,7 +87,8 @@ public class PhenotypeRepository {
 	 */
 	public Collection<Assay> findAssaysByTerm(TermId termId){
 		List<Assay> assays = new ArrayList<>();
-		try (PreparedStatement statement = connection.prepareStatement(
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT a.id, a.name FROM assay_phenotype ap JOIN assay a ON a.id = ap.assay_id WHERE ap.phenotype_id = ?")) {
 			statement.setString(1, termId.getValue());
 			try (ResultSet rs = statement.executeQuery()) {
@@ -88,7 +96,8 @@ public class PhenotypeRepository {
 					assays.add(new Assay(TermId.of(rs.getString("id")), rs.getString("name")));
 				}
 			}
-		} catch (Exception e){
+		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
 		return assays;
@@ -103,7 +112,8 @@ public class PhenotypeRepository {
 		Map<String, String> actionNames = new LinkedHashMap<>();
 		Map<String, Set<MedicalActionRelation>> actionRelations = new LinkedHashMap<>();
 		Map<String, Set<String>> actionSources = new LinkedHashMap<>();
-		try (PreparedStatement statement = connection.prepareStatement(
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT mat.medical_action_id, ma.name AS action_name, mat.relation, maa.source " +
 						"FROM medical_action_target mat " +
 						"JOIN medical_action ma ON ma.id = mat.medical_action_id " +
@@ -120,7 +130,8 @@ public class PhenotypeRepository {
 							.add(rs.getString("source"));
 				}
 			}
-		} catch (Exception e){
+		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
 
