@@ -18,7 +18,7 @@ wget -P $1 --no-use-server-timestamps https://raw.githubusercontent.com/monarch-
 wget -P $1 --no-use-server-timestamps https://github.com/monarch-initiative/MAxO/releases/latest/download/maxo-annotations.tsv
 
 # ORPHANET 2 GENE
-wget -P $1 --no-use-server-timestamps http://www.orphadata.org/data/xml/en_product6.xml
+wget -P $1 --no-use-server-timestamps https://www.orphadata.com/data/xml/en_product6.xml
 
 # GENE INFO
 # wget -P $1 --no-use-server-timestamps https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/hgnc_complete_set.txt
