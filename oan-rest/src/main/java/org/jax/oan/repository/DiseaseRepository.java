@@ -1,6 +1,8 @@
 package org.jax.oan.repository;
 
 import jakarta.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jax.oan.core.*;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
@@ -11,10 +13,11 @@ import java.util.*;
 
 @Singleton
 public class DiseaseRepository {
-	private final Connection connection;
+	private static final Logger log = LoggerFactory.getLogger(DiseaseRepository.class);
+	private final SqliteConnectionProvider connectionProvider;
 
 	public DiseaseRepository(SqliteConnectionProvider connectionProvider) {
-		this.connection = connectionProvider.connection();
+		this.connectionProvider = connectionProvider;
 	}
 
 	/**
@@ -23,7 +26,8 @@ public class DiseaseRepository {
 	 * @return List of diseases matching the query sorted by if the disease starts with.
 	 */
 	public Optional<Disease> findDiseaseById(TermId termId){
-		try (PreparedStatement statement = connection.prepareStatement(
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT id, name, mondo_id, description FROM disease WHERE id = ?")) {
 			statement.setString(1, termId.getValue());
 			try (ResultSet rs = statement.executeQuery()) {
@@ -34,6 +38,7 @@ public class DiseaseRepository {
 				return Optional.empty();
 			}
 		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Optional.empty();
 		}
 	}
@@ -45,7 +50,8 @@ public class DiseaseRepository {
 	 */
 	public Collection<Disease> findDiseases(String query) {
 		List<Disease> diseases = new ArrayList<>();
-		try (PreparedStatement statement = connection.prepareStatement(
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT id, name, mondo_id, description FROM disease WHERE LOWER(name) LIKE ? OR LOWER(id) LIKE ?")) {
 			String like = "%" + query.toLowerCase() + "%";
 			statement.setString(1, like);
@@ -57,6 +63,7 @@ public class DiseaseRepository {
 				}
 			}
 		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
 		return diseases.stream().sorted(Comparator.comparing((Disease d) -> !d.getName().toLowerCase()
@@ -70,7 +77,8 @@ public class DiseaseRepository {
 	 */
 	public Collection<Gene> findGenesByDisease(TermId termId) {
 		List<Gene> genes = new ArrayList<>();
-		try (PreparedStatement statement = connection.prepareStatement(
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT g.id, g.name FROM disease_gene dg JOIN gene g ON g.id = dg.gene_id WHERE dg.disease_id = ?")) {
 			statement.setString(1, termId.getValue());
 			try (ResultSet rs = statement.executeQuery()) {
@@ -79,6 +87,7 @@ public class DiseaseRepository {
 				}
 			}
 		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
 		return genes;
@@ -91,7 +100,8 @@ public class DiseaseRepository {
 	 */
 	public Collection<PhenotypeExtended> findPhenotypesByDisease(TermId termId){
 		List<PhenotypeExtended> phenotypes = new ArrayList<>();
-		try (PreparedStatement statement = connection.prepareStatement(
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT p.id, p.name, p.category, dp.sex, dp.onset, dp.frequency, dp.sources " +
 						"FROM disease_phenotype dp JOIN phenotype p ON p.id = dp.phenotype_id WHERE dp.disease_id = ?")) {
 			statement.setString(1, termId.getValue());
@@ -106,6 +116,7 @@ public class DiseaseRepository {
 				}
 			}
 		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
 		return phenotypes;
@@ -120,7 +131,8 @@ public class DiseaseRepository {
 		Map<String, String> actionNames = new LinkedHashMap<>();
 		Map<String, List<OntologyEntity>> actionTargets = new LinkedHashMap<>();
 		Map<String, Set<MedicalActionRelation>> actionRelations = new LinkedHashMap<>();
-		try (PreparedStatement statement = connection.prepareStatement(
+		try (Connection connection = connectionProvider.connection();
+			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT mat.medical_action_id, ma.name AS action_name, mat.phenotype_id, p.name AS phenotype_name, mat.relation " +
 						"FROM medical_action_target mat " +
 						"JOIN medical_action ma ON ma.id = mat.medical_action_id " +
@@ -147,6 +159,7 @@ public class DiseaseRepository {
 				}
 			}
 		} catch (Exception e) {
+			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
 

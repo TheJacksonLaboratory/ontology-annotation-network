@@ -7,6 +7,8 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.exceptions.HttpStatusException;
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.ExecuteOn;
 import io.micronaut.serde.annotation.SerdeImport;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
@@ -24,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 @Controller("/search")
+@ExecuteOn(TaskExecutors.BLOCKING)
 @SerdeImport(SearchDto.class)
 @SerdeImport(Disease.class)
 public class SearchController {
