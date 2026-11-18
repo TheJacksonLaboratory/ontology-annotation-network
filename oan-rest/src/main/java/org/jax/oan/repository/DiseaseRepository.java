@@ -49,13 +49,16 @@ public class DiseaseRepository {
 	 * @return List of diseases matching the query sorted by if the disease starts with.
 	 */
 	public Collection<Disease> findDiseases(String query) {
+		Optional<String> like = SearchQuery.likePattern(query);
+		if (like.isEmpty()) {
+			return List.of();
+		}
 		List<Disease> diseases = new ArrayList<>();
 		try (Connection connection = connectionProvider.connection();
 			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT id, name, mondo_id, description FROM disease WHERE LOWER(name) LIKE ? OR LOWER(id) LIKE ?")) {
-			String like = "%" + query.toLowerCase() + "%";
-			statement.setString(1, like);
-			statement.setString(2, like);
+			statement.setString(1, like.get());
+			statement.setString(2, "%" + query.strip().toLowerCase() + "%");
 			try (ResultSet rs = statement.executeQuery()) {
 				while (rs.next()) {
 					diseases.add(new Disease(TermId.of(rs.getString("id")), rs.getString("name"),
@@ -66,8 +69,7 @@ public class DiseaseRepository {
 			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
-		return diseases.stream().sorted(Comparator.comparing((Disease d) -> !d.getName().toLowerCase()
-				.startsWith(query.toLowerCase()))).toList();
+		return diseases.stream().sorted(SearchQuery.ranking(query, Disease::getName)).toList();
 	}
 
 	/**

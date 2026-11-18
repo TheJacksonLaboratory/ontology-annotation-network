@@ -52,6 +52,9 @@ class DiseaseRepositoryTest implements TestPropertyProvider {
 
 			statement.execute("INSERT INTO disease VALUES ('OMIM:092320', 'Some bad disease', '', '')");
 			statement.execute("INSERT INTO disease VALUES ('OMIM:555555', 'Bad disease', 'MONDO:000001', 'Rare disease')");
+			statement.execute("INSERT INTO disease VALUES ('OMIM:100001', 'Atypical Loeys-Dietz syndrome', '', '')");
+			statement.execute("INSERT INTO disease VALUES ('OMIM:609192', 'Loeys-Dietz syndrome 1', '', '')");
+			statement.execute("INSERT INTO disease VALUES ('OMIM:301050', 'Alport syndrome 1, X-linked', '', '')");
 			statement.execute("INSERT INTO phenotype VALUES ('HP:000001', 'short stature', '')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:9999', 'TX2')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:7777', 'MNN')");
@@ -113,5 +116,39 @@ class DiseaseRepositoryTest implements TestPropertyProvider {
 	void findMedicalActionsByDisease(){
 		Collection<MedicalActionTargetExtended> mse = diseaseRepository.findMedicalActionsByDisease(TermId.of("OMIM:555555"));
 		assertEquals(2, mse.size());
+	}
+
+	@Test
+	void findDiseasesTreatsSpacesAndHyphensAsWildcards(){
+		Disease loeysDietz = new Disease(TermId.of("OMIM:609192"), "Loeys-Dietz syndrome 1", "", "");
+		Disease alport = new Disease(TermId.of("OMIM:301050"), "Alport syndrome 1, X-linked", "", "");
+
+		assertTrue(diseaseRepository.findDiseases("loeys dietz").contains(loeysDietz));
+		assertTrue(diseaseRepository.findDiseases("loeys-dietz").contains(loeysDietz));
+		assertTrue(diseaseRepository.findDiseases("Loeys  Dietz").contains(loeysDietz));
+		assertTrue(diseaseRepository.findDiseases("x linked").contains(alport));
+		assertTrue(diseaseRepository.findDiseases("alport x").contains(alport));
+		assertFalse(diseaseRepository.findDiseases("dietz loeys").contains(loeysDietz));
+	}
+
+	@Test
+	void findDiseasesRanksPrefixMatchesFirstIgnoringSeparators(){
+		List<Disease> diseases = List.copyOf(diseaseRepository.findDiseases("loeys dietz"));
+
+		assertEquals(2, diseases.size());
+		assertEquals("Loeys-Dietz syndrome 1", diseases.get(0).getName());
+	}
+
+	@Test
+	void findDiseasesMatchesIdsLiterally(){
+		assertTrue(diseaseRepository.findDiseases("OMIM:5555").stream().anyMatch(d -> d.getId().equals("OMIM:555555")));
+		assertTrue(diseaseRepository.findDiseases("omim 5").isEmpty());
+	}
+
+	@Test
+	void findDiseasesReturnsNothingForSeparatorOnlyQuery(){
+		assertTrue(diseaseRepository.findDiseases("-").isEmpty());
+		assertTrue(diseaseRepository.findDiseases("  ").isEmpty());
+		assertTrue(diseaseRepository.findDiseases("- -").isEmpty());
 	}
 }

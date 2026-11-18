@@ -4,6 +4,7 @@ import org.jax.oan.core.*;
 import org.jax.oan.exception.OntologyAnnotationNetworkDataException;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
+import org.monarchinitiative.phenol.base.PhenolRuntimeException;
 import org.monarchinitiative.phenol.annotations.formats.AnnotationReference;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoAssociationData;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoGeneAnnotation;
@@ -47,24 +48,59 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	 */
 	@Override
 	public void load(Path hpoDataDirectory, Set<DiseaseDatabase> databases) throws IOException, OntologyAnnotationNetworkException {
+		final long loadStart = System.nanoTime();
+		long stage = System.nanoTime();
 		final HpoDataResolver dataResolver = HpoDataResolver.of(hpoDataDirectory);
 		SqliteSchema.createTables(sqliteWriter);
 		final Ontology hpoOntology = OntologyLoader.loadOntology(dataResolver.hpJson().toFile());
+		stage = logElapsed("Load HPO ontology", stage);
 		final Ontology mondoOntology = OntologyLoader.loadOntology(dataResolver.mondoJson().toFile(), "MONDO");
+		stage = logElapsed("Load MONDO ontology", stage);
 		final HpoaDiseaseDataContainer diseases = HpoaDiseaseDataLoader.of(databases).loadDiseaseData(dataResolver.phenotypeAnnotations());
+		stage = logElapsed("Load disease annotations", stage);
 		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).orphaToGenePath(dataResolver.orpha2Gene()).mim2GeneMedgen(dataResolver.mim2geneMedgen())
 				.hpoDiseases(diseases).hgncCompleteSetArchive(deduplicateHgncEntrezIds(dataResolver.hgncCompleteSet())).build();
+		stage = logElapsed("Build gene associations", stage);
+		final MondoXrefIndex mondoIndex = MondoXrefIndex.of(mondoOntology.getTerms());
+		stage = logElapsed("Index MONDO xrefs", stage);
+		final Map<TermId, Term> mondoEquivalents = mondoEquivalents(diseases, mondoIndex);
+		stage = logElapsed("Match diseases to MONDO", stage);
 		Map<TermId, String> categories = phenotypeToCategory(hpoOntology);
+		stage = logElapsed("Assign phenotype categories", stage);
 		phenotypes(hpoOntology.getTerms(), categories);
-		diseases(diseases, mondoOntology.getTerms());
+		stage = logElapsed("Phenotypes", stage);
+		diseases(diseases, mondoEquivalents);
+		stage = logElapsed("Diseases", stage);
 		genes(associations);
+		stage = logElapsed("Genes", stage);
 		phenotypeToPhenotype(hpoOntology.getTerms(), hpoOntology);
+		stage = logElapsed("Phenotype to phenotype", stage);
 		diseaseToPhenotype(diseases, hpoOntology);
+		stage = logElapsed("Disease to phenotype", stage);
 		geneToPhenotype(associations);
+		stage = logElapsed("Gene to phenotype", stage);
 		diseaseToGene(associations);
+		stage = logElapsed("Disease to gene", stage);
 		assayToPhenotype(dataResolver.loinc());
-		medicalAction(dataResolver.maxoa(), diseases, mondoOntology.getTerms());
+		stage = logElapsed("Assay to phenotype", stage);
+		medicalAction(dataResolver.maxoa(), diseases, mondoEquivalents);
+		stage = logElapsed("Medical actions", stage);
 		SqliteSchema.createIndexes(sqliteWriter);
+		logElapsed("Create indexes", stage);
+		logElapsed("Total load", loadStart);
+	}
+
+	/**
+	 * Logs how long a load stage took.
+	 *
+	 * @param stageName the name of the stage, as it appears in the log.
+	 * @param startNanos the {@link System#nanoTime()} value when the stage started.
+	 * @return the current {@link System#nanoTime()} value, to use as the start of the next stage.
+	 */
+	private static long logElapsed(String stageName, long startNanos) {
+		long now = System.nanoTime();
+		logger.info("Timing: {} took {} s", stageName, String.format("%.1f", (now - startNanos) / 1e9));
+		return now;
 	}
 
 	/**
@@ -132,11 +168,11 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		logger.info("Done.");
 	}
 
-	void diseases(HpoaDiseaseDataContainer diseases, Collection<Term> mondoTerms){
+	void diseases(HpoaDiseaseDataContainer diseases, Map<TermId, Term> mondoEquivalents){
 		logger.info("Loading Diseases...");
 		List<Object[]> rows = new ArrayList<>();
 		diseases.diseaseData().stream().distinct().forEach(d -> {
-					Optional<Term> equivalent = findMondoEquivalent(d.id(), d.name(), mondoTerms);
+					Optional<Term> equivalent = Optional.ofNullable(mondoEquivalents.get(d.id()));
 					String mondoId = "";
 					String description = "No disease description found.";
 					if (equivalent.isPresent()){
@@ -224,13 +260,13 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		logger.info("Done");
 	}
 
-	void medicalAction(Path maxoa, HpoaDiseaseDataContainer diseases, Collection<Term> mondoTerms){
+	void medicalAction(Path maxoa, HpoaDiseaseDataContainer diseases, Map<TermId, Term> mondoEquivalents){
 		logger.info("Loading Medical Action Relationships...");
 		final TermId root = TermId.of("HP:0000118");
 
 		Map<String, String> omimMondoToDiseaseId = new HashMap<>();
 		diseases.diseaseData().stream().distinct().forEach(d ->
-			findMondoEquivalent(d.id(), d.name(), mondoTerms).ifPresent(term -> {
+			Optional.ofNullable(mondoEquivalents.get(d.id())).ifPresent(term -> {
 				if (d.id().toString().contains("OMIM")) {
 					omimMondoToDiseaseId.put(term.id().getValue(), d.id().toString());
 				}
@@ -308,14 +344,31 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		return frequency;
 	}
 
-	static Optional<Term> findMondoEquivalent(TermId target, String targetName, Collection<Term> diseases){
-		 List<Term> equivalence = diseases.stream().filter(term ->
-				term.getXrefs().stream().map(Dbxref::getName).map(TermId::of).anyMatch(s ->
-						s.getValue().equals(target.toString()) || s.getValue().equals(
-								TermId.of(AlternativePrefix.from(target.getPrefix()), target.getId()).getValue())
-				)
+	/**
+	 * Finds the MONDO equivalent of each disease.
+	 *
+	 * @param diseases the diseases to match.
+	 * @param mondoIndex the index of MONDO terms by xref.
+	 * @return the equivalent MONDO term keyed by disease id, for the diseases that have one.
+	 */
+	static Map<TermId, Term> mondoEquivalents(HpoaDiseaseDataContainer diseases, MondoXrefIndex mondoIndex) {
+		Map<TermId, Term> equivalents = new HashMap<>();
+		diseases.diseaseData().stream().distinct().forEach(d ->
+				findMondoEquivalent(d.id(), d.name(), mondoIndex).ifPresent(term -> equivalents.putIfAbsent(d.id(), term)));
+		return equivalents;
+	}
 
-		).toList();
+	/**
+	 * Finds the MONDO term equivalent to a disease using a prebuilt xref index.
+	 *
+	 * @param target the disease id, such as OMIM:154700 or ORPHA:558.
+	 * @param targetName the disease name, used to choose between several matching terms.
+	 * @param mondoIndex the index of MONDO terms by xref.
+	 * @return the equivalent MONDO term, or an empty optional if there is none or the match is ambiguous.
+	 */
+	static Optional<Term> findMondoEquivalent(TermId target, String targetName, MondoXrefIndex mondoIndex){
+		 List<Term> equivalence = mondoIndex.termsWithXref(target.toString(),
+				 TermId.of(AlternativePrefix.from(target.getPrefix()), target.getId()).getValue());
 
 		 if (equivalence.isEmpty()) {
 			 return Optional.empty();
@@ -335,5 +388,61 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		 } else {
 			 return equivalence.stream().findFirst();
 		 }
+	}
+
+	/**
+	 * MONDO terms indexed by the value of each of their xrefs, such as OMIM:154700.
+	 */
+	static final class MondoXrefIndex {
+		private final Map<String, List<Term>> termsByXref;
+
+		private MondoXrefIndex(Map<String, List<Term>> termsByXref) {
+			this.termsByXref = termsByXref;
+		}
+
+		/**
+		 * Builds the index. Xrefs that are not valid term ids are skipped and counted in a warning.
+		 *
+		 * @param mondoTerms the MONDO terms to index.
+		 * @return an index over the xrefs of {@code mondoTerms}.
+		 */
+		static MondoXrefIndex of(Collection<Term> mondoTerms) {
+			Map<String, List<Term>> termsByXref = new HashMap<>();
+			int skipped = 0;
+			for (Term term : mondoTerms) {
+				for (Dbxref xref : term.getXrefs()) {
+					String value;
+					try {
+						value = TermId.of(xref.getName()).getValue();
+					} catch (PhenolRuntimeException e) {
+						skipped++;
+						continue;
+					}
+					termsByXref.computeIfAbsent(value, k -> new ArrayList<>()).add(term);
+				}
+			}
+			if (skipped > 0) {
+				logger.warn("Skipped {} MONDO xrefs that are not valid term ids", skipped);
+			}
+			return new MondoXrefIndex(termsByXref);
+		}
+
+		/**
+		 * Returns the terms that have an xref equal to any of the given values.
+		 *
+		 * @param xrefValues the xref values to look up, such as OMIM:154700.
+		 * @return the matching terms without duplicates, ordered by the value they matched and then by source order.
+		 */
+		List<Term> termsWithXref(String... xrefValues) {
+			List<Term> matches = new ArrayList<>();
+			for (String value : xrefValues) {
+				for (Term term : termsByXref.getOrDefault(value, List.of())) {
+					if (matches.stream().noneMatch(m -> m == term)) {
+						matches.add(term);
+					}
+				}
+			}
+			return matches;
+		}
 	}
 }

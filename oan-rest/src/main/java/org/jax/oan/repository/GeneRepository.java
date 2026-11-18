@@ -29,11 +29,15 @@ public class GeneRepository {
 	 * @return List of genes matching the query sorted by if the gene starts with query.
 	 */
 	public Collection<Gene> findGenes(String query){
+		Optional<String> like = SearchQuery.likePattern(query);
+		if (like.isEmpty()) {
+			return List.of();
+		}
 		List<Gene> genes = new ArrayList<>();
 		try (Connection connection = connectionProvider.connection();
 			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT id, name FROM gene WHERE LOWER(name) LIKE ? OR id LIKE ?")) {
-			statement.setString(1, "%" + query.toLowerCase() + "%");
+			statement.setString(1, like.get());
 			statement.setString(2, "%" + query + "%");
 			try (ResultSet rs = statement.executeQuery()) {
 				while (rs.next()) {
@@ -44,8 +48,7 @@ public class GeneRepository {
 			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
-		return genes.stream().sorted(Comparator.comparing((Gene g) -> !g.getName().toLowerCase()
-				.startsWith(query.toLowerCase()))).toList();
+		return genes.stream().sorted(SearchQuery.ranking(query, Gene::getName)).toList();
 	}
 
 	/**
