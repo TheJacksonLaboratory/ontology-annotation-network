@@ -48,8 +48,7 @@ public class GeneRepository {
 			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
-		return genes.stream().sorted(Comparator.comparing((Gene g) -> !g.getName().toLowerCase()
-				.startsWith(query.toLowerCase()))).toList();
+		return genes.stream().sorted(SearchQuery.ranking(query, Gene::getName)).toList();
 	}
 
 	/**

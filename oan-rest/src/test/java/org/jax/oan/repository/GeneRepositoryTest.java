@@ -52,6 +52,7 @@ class GeneRepositoryTest implements TestPropertyProvider {
 			statement.execute("INSERT INTO phenotype VALUES ('HP:000001', 'short stature', '')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:9999', 'TX2')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:7777', 'MNN')");
+			statement.execute("INSERT INTO gene VALUES ('NCBIGene:9998', 'XHLA-DRB1')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:3123', 'HLA-DRB1')");
 			statement.execute("INSERT INTO disease_gene VALUES ('OMIM:092320', 'NCBIGene:7777')");
 			statement.execute("INSERT INTO disease_gene VALUES ('OMIM:092320', 'NCBIGene:9999')");
@@ -93,6 +94,13 @@ class GeneRepositoryTest implements TestPropertyProvider {
 
 		assertTrue(this.geneRepository.findGenes("hla drb1").contains(hla));
 		assertTrue(this.geneRepository.findGenes("HLA-DRB1").contains(hla));
+	}
+
+	@Test
+	void findGenesRanksPrefixMatchesFirstIgnoringSeparators() {
+		List<Gene> genes = List.copyOf(this.geneRepository.findGenes("hla drb1"));
+
+		assertEquals("HLA-DRB1", genes.get(0).getName());
 	}
 
 	@Test

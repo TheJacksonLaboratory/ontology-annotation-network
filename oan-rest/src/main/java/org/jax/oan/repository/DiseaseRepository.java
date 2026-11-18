@@ -69,8 +69,7 @@ public class DiseaseRepository {
 			log.warn("Repository query failed", e);
 			return Collections.emptyList();
 		}
-		return diseases.stream().sorted(Comparator.comparing((Disease d) -> !d.getName().toLowerCase()
-				.startsWith(query.toLowerCase()))).toList();
+		return diseases.stream().sorted(SearchQuery.ranking(query, Disease::getName)).toList();
 	}
 
 	/**
