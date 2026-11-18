@@ -140,6 +140,12 @@ class DiseaseRepositoryTest implements TestPropertyProvider {
 	}
 
 	@Test
+	void findDiseasesMatchesIdsLiterally(){
+		assertTrue(diseaseRepository.findDiseases("OMIM:5555").stream().anyMatch(d -> d.getId().equals("OMIM:555555")));
+		assertTrue(diseaseRepository.findDiseases("omim 5").isEmpty());
+	}
+
+	@Test
 	void findDiseasesReturnsNothingForSeparatorOnlyQuery(){
 		assertTrue(diseaseRepository.findDiseases("-").isEmpty());
 		assertTrue(diseaseRepository.findDiseases("  ").isEmpty());

@@ -58,7 +58,7 @@ public class DiseaseRepository {
 			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT id, name, mondo_id, description FROM disease WHERE LOWER(name) LIKE ? OR LOWER(id) LIKE ?")) {
 			statement.setString(1, like.get());
-			statement.setString(2, like.get());
+			statement.setString(2, "%" + query.strip().toLowerCase() + "%");
 			try (ResultSet rs = statement.executeQuery()) {
 				while (rs.next()) {
 					diseases.add(new Disease(TermId.of(rs.getString("id")), rs.getString("name"),
