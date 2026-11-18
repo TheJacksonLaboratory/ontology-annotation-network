@@ -54,6 +54,9 @@ class GeneRepositoryTest implements TestPropertyProvider {
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:7777', 'MNN')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:9998', 'XHLA-DRB1')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:3123', 'HLA-DRB1')");
+			statement.execute("INSERT INTO gene VALUES ('NCBIGene:3122', 'HLA-DRA')");
+			statement.execute("INSERT INTO gene VALUES ('NCBIGene:3117', 'HLA-DQA1')");
+			statement.execute("INSERT INTO gene VALUES ('NCBIGene:3105', 'HLA-A')");
 			statement.execute("INSERT INTO disease_gene VALUES ('OMIM:092320', 'NCBIGene:7777')");
 			statement.execute("INSERT INTO disease_gene VALUES ('OMIM:092320', 'NCBIGene:9999')");
 			statement.execute("INSERT INTO gene_phenotype VALUES ('NCBIGene:9999', 'HP:000001')");
@@ -94,6 +97,12 @@ class GeneRepositoryTest implements TestPropertyProvider {
 
 		assertTrue(this.geneRepository.findGenes("hla drb1").contains(hla));
 		assertTrue(this.geneRepository.findGenes("HLA-DRB1").contains(hla));
+	}
+
+	@Test
+	void findGenesRanksExactHyphenatedSymbolFirst() {
+		assertEquals("HLA-A", List.copyOf(this.geneRepository.findGenes("HLA-A")).get(0).getName());
+		assertEquals("HLA-A", List.copyOf(this.geneRepository.findGenes("hla a")).get(0).getName());
 	}
 
 	@Test
