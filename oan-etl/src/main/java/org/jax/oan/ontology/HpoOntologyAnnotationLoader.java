@@ -4,6 +4,7 @@ import org.jax.oan.core.*;
 import org.jax.oan.exception.OntologyAnnotationNetworkDataException;
 import org.jax.oan.exception.OntologyAnnotationNetworkException;
 import org.jax.oan.exception.OntologyAnnotationNetworkRuntimeException;
+import org.monarchinitiative.phenol.base.PhenolRuntimeException;
 import org.monarchinitiative.phenol.annotations.formats.AnnotationReference;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoAssociationData;
 import org.monarchinitiative.phenol.annotations.formats.hpo.HpoGeneAnnotation;
@@ -398,7 +399,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		}
 
 		/**
-		 * Builds the index.
+		 * Builds the index. Xrefs that are not valid term ids are skipped and counted in a warning.
 		 *
 		 * @param mondoTerms the MONDO terms to index.
 		 * @return an index over the xrefs of {@code mondoTerms}.
@@ -406,10 +407,21 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		static MondoXrefIndex of(Collection<Term> mondoTerms) {
 			List<Term> terms = List.copyOf(mondoTerms);
 			Map<String, List<Integer>> positionsByXref = new HashMap<>();
+			int skipped = 0;
 			for (int i = 0; i < terms.size(); i++) {
 				for (Dbxref xref : terms.get(i).getXrefs()) {
-					positionsByXref.computeIfAbsent(TermId.of(xref.getName()).getValue(), k -> new ArrayList<>()).add(i);
+					String value;
+					try {
+						value = TermId.of(xref.getName()).getValue();
+					} catch (PhenolRuntimeException e) {
+						skipped++;
+						continue;
+					}
+					positionsByXref.computeIfAbsent(value, k -> new ArrayList<>()).add(i);
 				}
+			}
+			if (skipped > 0) {
+				logger.warn("Skipped {} MONDO xrefs that are not valid term ids", skipped);
 			}
 			return new MondoXrefIndex(terms, positionsByXref);
 		}

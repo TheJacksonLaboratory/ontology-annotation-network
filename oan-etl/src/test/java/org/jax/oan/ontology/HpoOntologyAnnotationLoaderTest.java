@@ -266,6 +266,20 @@ class HpoOntologyAnnotationLoaderTest {
 		assertEquals(Optional.empty(), HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, "Quadri Disease", diseases));
 	}
 
+	@Test
+	void mondoXrefIndexSkipsMalformedXrefs(){
+		Term target = Term.builder(TermId.of("MONDO:0000001")).xrefs(
+				List.of(
+						new Dbxref("not a curie", "", null),
+						new Dbxref("OMIM:619340", "", null)
+				)
+		).name("Bad Disease 1").build();
+
+		HpoOntologyAnnotationLoader.MondoXrefIndex index = HpoOntologyAnnotationLoader.MondoXrefIndex.of(List.of(target));
+
+		assertEquals(List.of(target), index.termsWithXref("OMIM:619340"));
+	}
+
 
 	@Test
 	void phenotypeToCategory(){
