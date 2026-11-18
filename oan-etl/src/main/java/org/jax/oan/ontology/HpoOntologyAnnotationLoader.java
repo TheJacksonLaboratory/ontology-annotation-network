@@ -63,11 +63,13 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		stage = logElapsed("Build gene associations", stage);
 		final MondoXrefIndex mondoIndex = MondoXrefIndex.of(mondoOntology.getTerms());
 		stage = logElapsed("Index MONDO xrefs", stage);
+		final Map<TermId, Term> mondoEquivalents = mondoEquivalents(diseases, mondoIndex);
+		stage = logElapsed("Match diseases to MONDO", stage);
 		Map<TermId, String> categories = phenotypeToCategory(hpoOntology);
 		stage = logElapsed("Assign phenotype categories", stage);
 		phenotypes(hpoOntology.getTerms(), categories);
 		stage = logElapsed("Phenotypes", stage);
-		diseases(diseases, mondoIndex);
+		diseases(diseases, mondoEquivalents);
 		stage = logElapsed("Diseases", stage);
 		genes(associations);
 		stage = logElapsed("Genes", stage);
@@ -81,7 +83,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		stage = logElapsed("Disease to gene", stage);
 		assayToPhenotype(dataResolver.loinc());
 		stage = logElapsed("Assay to phenotype", stage);
-		medicalAction(dataResolver.maxoa(), diseases, mondoIndex);
+		medicalAction(dataResolver.maxoa(), diseases, mondoEquivalents);
 		stage = logElapsed("Medical actions", stage);
 		SqliteSchema.createIndexes(sqliteWriter);
 		logElapsed("Create indexes", stage);
@@ -166,11 +168,11 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		logger.info("Done.");
 	}
 
-	void diseases(HpoaDiseaseDataContainer diseases, MondoXrefIndex mondoIndex){
+	void diseases(HpoaDiseaseDataContainer diseases, Map<TermId, Term> mondoEquivalents){
 		logger.info("Loading Diseases...");
 		List<Object[]> rows = new ArrayList<>();
 		diseases.diseaseData().stream().distinct().forEach(d -> {
-					Optional<Term> equivalent = findMondoEquivalent(d.id(), d.name(), mondoIndex);
+					Optional<Term> equivalent = Optional.ofNullable(mondoEquivalents.get(d.id()));
 					String mondoId = "";
 					String description = "No disease description found.";
 					if (equivalent.isPresent()){
@@ -258,13 +260,13 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		logger.info("Done");
 	}
 
-	void medicalAction(Path maxoa, HpoaDiseaseDataContainer diseases, MondoXrefIndex mondoIndex){
+	void medicalAction(Path maxoa, HpoaDiseaseDataContainer diseases, Map<TermId, Term> mondoEquivalents){
 		logger.info("Loading Medical Action Relationships...");
 		final TermId root = TermId.of("HP:0000118");
 
 		Map<String, String> omimMondoToDiseaseId = new HashMap<>();
 		diseases.diseaseData().stream().distinct().forEach(d ->
-			findMondoEquivalent(d.id(), d.name(), mondoIndex).ifPresent(term -> {
+			Optional.ofNullable(mondoEquivalents.get(d.id())).ifPresent(term -> {
 				if (d.id().toString().contains("OMIM")) {
 					omimMondoToDiseaseId.put(term.id().getValue(), d.id().toString());
 				}
@@ -340,6 +342,20 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 			return "";
 		}
 		return frequency;
+	}
+
+	/**
+	 * Finds the MONDO equivalent of each disease.
+	 *
+	 * @param diseases the diseases to match.
+	 * @param mondoIndex the index of MONDO terms by xref.
+	 * @return the equivalent MONDO term keyed by disease id, for the diseases that have one.
+	 */
+	static Map<TermId, Term> mondoEquivalents(HpoaDiseaseDataContainer diseases, MondoXrefIndex mondoIndex) {
+		Map<TermId, Term> equivalents = new HashMap<>();
+		diseases.diseaseData().stream().distinct().forEach(d ->
+				findMondoEquivalent(d.id(), d.name(), mondoIndex).ifPresent(term -> equivalents.putIfAbsent(d.id(), term)));
+		return equivalents;
 	}
 
 	/**
