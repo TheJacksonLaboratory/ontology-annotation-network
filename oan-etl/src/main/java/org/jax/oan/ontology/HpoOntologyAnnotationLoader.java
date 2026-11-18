@@ -359,18 +359,6 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	}
 
 	/**
-	 * Finds the MONDO term equivalent to a disease by scanning the xrefs of the given terms.
-	 *
-	 * @param target the disease id, such as OMIM:154700 or ORPHA:558.
-	 * @param targetName the disease name, used to choose between several matching terms.
-	 * @param diseases the MONDO terms to search.
-	 * @return the equivalent MONDO term, or an empty optional if there is none or the match is ambiguous.
-	 */
-	static Optional<Term> findMondoEquivalent(TermId target, String targetName, Collection<Term> diseases){
-		return findMondoEquivalent(target, targetName, MondoXrefIndex.of(diseases));
-	}
-
-	/**
 	 * Finds the MONDO term equivalent to a disease using a prebuilt xref index.
 	 *
 	 * @param target the disease id, such as OMIM:154700 or ORPHA:558.
@@ -406,12 +394,10 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 	 * MONDO terms indexed by the value of each of their xrefs, such as OMIM:154700.
 	 */
 	static final class MondoXrefIndex {
-		private final List<Term> terms;
-		private final Map<String, List<Integer>> positionsByXref;
+		private final Map<String, List<Term>> termsByXref;
 
-		private MondoXrefIndex(List<Term> terms, Map<String, List<Integer>> positionsByXref) {
-			this.terms = terms;
-			this.positionsByXref = positionsByXref;
+		private MondoXrefIndex(Map<String, List<Term>> termsByXref) {
+			this.termsByXref = termsByXref;
 		}
 
 		/**
@@ -421,11 +407,10 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		 * @return an index over the xrefs of {@code mondoTerms}.
 		 */
 		static MondoXrefIndex of(Collection<Term> mondoTerms) {
-			List<Term> terms = List.copyOf(mondoTerms);
-			Map<String, List<Integer>> positionsByXref = new HashMap<>();
+			Map<String, List<Term>> termsByXref = new HashMap<>();
 			int skipped = 0;
-			for (int i = 0; i < terms.size(); i++) {
-				for (Dbxref xref : terms.get(i).getXrefs()) {
+			for (Term term : mondoTerms) {
+				for (Dbxref xref : term.getXrefs()) {
 					String value;
 					try {
 						value = TermId.of(xref.getName()).getValue();
@@ -433,27 +418,31 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 						skipped++;
 						continue;
 					}
-					positionsByXref.computeIfAbsent(value, k -> new ArrayList<>()).add(i);
+					termsByXref.computeIfAbsent(value, k -> new ArrayList<>()).add(term);
 				}
 			}
 			if (skipped > 0) {
 				logger.warn("Skipped {} MONDO xrefs that are not valid term ids", skipped);
 			}
-			return new MondoXrefIndex(terms, positionsByXref);
+			return new MondoXrefIndex(termsByXref);
 		}
 
 		/**
 		 * Returns the terms that have an xref equal to any of the given values.
 		 *
 		 * @param xrefValues the xref values to look up, such as OMIM:154700.
-		 * @return the matching terms without duplicates, in the order of the collection the index was built from.
+		 * @return the matching terms without duplicates, ordered by the value they matched and then by source order.
 		 */
 		List<Term> termsWithXref(String... xrefValues) {
-			SortedSet<Integer> positions = new TreeSet<>();
+			List<Term> matches = new ArrayList<>();
 			for (String value : xrefValues) {
-				positions.addAll(positionsByXref.getOrDefault(value, List.of()));
+				for (Term term : termsByXref.getOrDefault(value, List.of())) {
+					if (matches.stream().noneMatch(m -> m == term)) {
+						matches.add(term);
+					}
+				}
 			}
-			return positions.stream().map(terms::get).toList();
+			return matches;
 		}
 	}
 }

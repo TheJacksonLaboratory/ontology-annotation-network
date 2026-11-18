@@ -223,7 +223,7 @@ class HpoOntologyAnnotationLoaderTest {
 		).name("Bad Disease 1").build();
 		Collection<Term> diseases = List.of(target);
 
-		assertEquals(target, HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, "Bad Disease 1", diseases).orElse(null));
+		assertEquals(target, HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, "Bad Disease 1", HpoOntologyAnnotationLoader.MondoXrefIndex.of(diseases)).orElse(null));
 	}
 
 	@Test
@@ -243,7 +243,7 @@ class HpoOntologyAnnotationLoaderTest {
 		).name("Other Disease 3").build();
 		Collection<Term> diseases = List.of(target, target2);
 
-		assertEquals(target2, HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, "Other Disease 3", diseases).orElse(null));
+		assertEquals(target2, HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, "Other Disease 3", HpoOntologyAnnotationLoader.MondoXrefIndex.of(diseases)).orElse(null));
 	}
 
 	@Test
@@ -263,7 +263,7 @@ class HpoOntologyAnnotationLoaderTest {
 		).name("Other Disease 3").build();
 		Collection<Term> diseases = List.of(target, target2);
 
-		assertEquals(Optional.empty(), HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, "Quadri Disease", diseases));
+		assertEquals(Optional.empty(), HpoOntologyAnnotationLoader.findMondoEquivalent(targetId, "Quadri Disease", HpoOntologyAnnotationLoader.MondoXrefIndex.of(diseases)));
 	}
 
 	@Test
