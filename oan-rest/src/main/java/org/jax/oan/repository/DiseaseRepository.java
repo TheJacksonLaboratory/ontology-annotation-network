@@ -53,7 +53,7 @@ public class DiseaseRepository {
 		try (Connection connection = connectionProvider.connection();
 			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT id, name, mondo_id, description FROM disease WHERE LOWER(name) LIKE ? OR LOWER(id) LIKE ?")) {
-			String like = "%" + query.toLowerCase() + "%";
+			String like = "%" + query.toLowerCase().replaceAll("[-\\s]+", "%") + "%";
 			statement.setString(1, like);
 			statement.setString(2, like);
 			try (ResultSet rs = statement.executeQuery()) {

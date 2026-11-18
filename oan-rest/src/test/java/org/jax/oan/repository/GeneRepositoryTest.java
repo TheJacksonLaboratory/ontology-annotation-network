@@ -52,6 +52,7 @@ class GeneRepositoryTest implements TestPropertyProvider {
 			statement.execute("INSERT INTO phenotype VALUES ('HP:000001', 'short stature', '')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:9999', 'TX2')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:7777', 'MNN')");
+			statement.execute("INSERT INTO gene VALUES ('NCBIGene:3123', 'HLA-DRB1')");
 			statement.execute("INSERT INTO disease_gene VALUES ('OMIM:092320', 'NCBIGene:7777')");
 			statement.execute("INSERT INTO disease_gene VALUES ('OMIM:092320', 'NCBIGene:9999')");
 			statement.execute("INSERT INTO gene_phenotype VALUES ('NCBIGene:9999', 'HP:000001')");
@@ -84,5 +85,13 @@ class GeneRepositoryTest implements TestPropertyProvider {
 				new Gene(TermId.of("NCBIGene:7777"), "MNN")
 		);
 		assertTrue(genes.containsAll(expected));
+	}
+
+	@Test
+	void findGenesTreatsSpacesAndHyphensAsWildcards() {
+		Gene hla = new Gene(TermId.of("NCBIGene:3123"), "HLA-DRB1");
+
+		assertTrue(this.geneRepository.findGenes("hla drb1").contains(hla));
+		assertTrue(this.geneRepository.findGenes("HLA-DRB1").contains(hla));
 	}
 }

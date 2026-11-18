@@ -33,7 +33,7 @@ public class GeneRepository {
 		try (Connection connection = connectionProvider.connection();
 			 PreparedStatement statement = connection.prepareStatement(
 				"SELECT id, name FROM gene WHERE LOWER(name) LIKE ? OR id LIKE ?")) {
-			statement.setString(1, "%" + query.toLowerCase() + "%");
+			statement.setString(1, "%" + query.toLowerCase().replaceAll("[-\\s]+", "%") + "%");
 			statement.setString(2, "%" + query + "%");
 			try (ResultSet rs = statement.executeQuery()) {
 				while (rs.next()) {

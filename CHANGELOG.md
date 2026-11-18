@@ -7,6 +7,7 @@
 - oan-rest tuned for Cloud Run: connection pool, blocking executor, JVM and instance sizing.
 
 ### Fixed
+- SQLite disease and gene search treat spaces and hyphens as wildcards, matching the Neo4j search ("loeys dietz" finds Loeys-Dietz syndrome, "x linked" finds X-linked diseases).
 - Orphanet gene associations are fetched from orphadata.com (orphadata.org no longer resolves).
 - ETL tolerates duplicate NCBI Gene IDs in HGNC's complete set.
 
