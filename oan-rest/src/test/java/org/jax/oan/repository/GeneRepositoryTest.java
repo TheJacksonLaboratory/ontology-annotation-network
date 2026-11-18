@@ -94,4 +94,10 @@ class GeneRepositoryTest implements TestPropertyProvider {
 		assertTrue(this.geneRepository.findGenes("hla drb1").contains(hla));
 		assertTrue(this.geneRepository.findGenes("HLA-DRB1").contains(hla));
 	}
+
+	@Test
+	void findGenesReturnsNothingForSeparatorOnlyQuery() {
+		assertTrue(this.geneRepository.findGenes("-").isEmpty());
+		assertTrue(this.geneRepository.findGenes("- -").isEmpty());
+	}
 }

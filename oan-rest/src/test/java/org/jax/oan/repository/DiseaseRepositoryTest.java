@@ -129,4 +129,11 @@ class DiseaseRepositoryTest implements TestPropertyProvider {
 		assertTrue(diseaseRepository.findDiseases("alport x").contains(alport));
 		assertFalse(diseaseRepository.findDiseases("dietz loeys").contains(loeysDietz));
 	}
+
+	@Test
+	void findDiseasesReturnsNothingForSeparatorOnlyQuery(){
+		assertTrue(diseaseRepository.findDiseases("-").isEmpty());
+		assertTrue(diseaseRepository.findDiseases("  ").isEmpty());
+		assertTrue(diseaseRepository.findDiseases("- -").isEmpty());
+	}
 }
