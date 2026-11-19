@@ -14,6 +14,7 @@ import java.util.*;
 @Singleton
 public class DiseaseRepository {
 	private static final Logger log = LoggerFactory.getLogger(DiseaseRepository.class);
+	private static final RankedSearch SEARCH = new RankedSearch("disease", "disease_fts", "disease_id", true);
 	private final SqliteConnectionProvider connectionProvider;
 
 	public DiseaseRepository(SqliteConnectionProvider connectionProvider) {
@@ -44,32 +45,33 @@ public class DiseaseRepository {
 	}
 
 	/**
-	 * Find me a disease by query.
-	 * @param query - the text to search for
-	 * @return List of diseases matching the query sorted by if the disease starts with.
+	 * Finds every disease matching a query, ranked.
+	 *
+	 * @param query the text to search for.
+	 * @return all matching diseases, in ranked order.
 	 */
 	public Collection<Disease> findDiseases(String query) {
-		Optional<String> like = SearchQuery.likePattern(query);
-		if (like.isEmpty()) {
-			return List.of();
-		}
-		List<Disease> diseases = new ArrayList<>();
-		try (Connection connection = connectionProvider.connection();
-			 PreparedStatement statement = connection.prepareStatement(
-				"SELECT id, name, mondo_id, description FROM disease WHERE LOWER(name) LIKE ? OR LOWER(id) LIKE ?")) {
-			statement.setString(1, like.get());
-			statement.setString(2, "%" + query.strip().toLowerCase() + "%");
-			try (ResultSet rs = statement.executeQuery()) {
-				while (rs.next()) {
-					diseases.add(new Disease(TermId.of(rs.getString("id")), rs.getString("name"),
+		return searchDiseases(query, 0, -1).results();
+	}
+
+	/**
+	 * Searches diseases by id, MONDO id, name and synonym, and returns one page of ranked results.
+	 *
+	 * @param query the text to search for.
+	 * @param offset the number of ranked results to skip.
+	 * @param limit the maximum number of results to return, or {@code -1} for no limit.
+	 * @return the page and the number of matching diseases across all pages; an empty page with a total of zero if
+	 * the query has no words or the search fails.
+	 */
+	public SearchPage<Disease> searchDiseases(String query, int offset, int limit) {
+		try (Connection connection = connectionProvider.connection()) {
+			return SEARCH.page(connection, "e.id, e.name, e.mondo_id, e.description", "disease", query, offset, limit,
+					rs -> new Disease(TermId.of(rs.getString("id")), rs.getString("name"),
 							rs.getString("mondo_id"), rs.getString("description")));
-				}
-			}
 		} catch (Exception e) {
-			log.warn("Repository query failed", e);
-			return Collections.emptyList();
+			log.error("Disease search failed", e);
+			return new SearchPage<>(List.of(), 0);
 		}
-		return diseases.stream().sorted(SearchQuery.ranking(query, Disease::getName)).toList();
 	}
 
 	/**
