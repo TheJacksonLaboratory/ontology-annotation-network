@@ -18,6 +18,7 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,6 +48,7 @@ class GeneRepositoryTest implements TestPropertyProvider {
 			statement.execute("CREATE TABLE gene (id TEXT PRIMARY KEY, name TEXT NOT NULL)");
 			statement.execute("CREATE TABLE disease_gene (disease_id TEXT NOT NULL, gene_id TEXT NOT NULL, PRIMARY KEY (disease_id, gene_id))");
 			statement.execute("CREATE TABLE gene_phenotype (gene_id TEXT NOT NULL, phenotype_id TEXT NOT NULL, PRIMARY KEY (gene_id, phenotype_id))");
+			statement.execute("CREATE VIRTUAL TABLE gene_fts USING fts5(gene_id UNINDEXED, name, kind UNINDEXED, tokenize = 'unicode61 remove_diacritics 2', prefix = '2 3')");
 
 			statement.execute("INSERT INTO disease VALUES ('OMIM:092320', 'Some bad disease', '', '')");
 			statement.execute("INSERT INTO phenotype VALUES ('HP:000001', 'short stature', '')");
@@ -57,6 +59,13 @@ class GeneRepositoryTest implements TestPropertyProvider {
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:3122', 'HLA-DRA')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:3117', 'HLA-DQA1')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:3105', 'HLA-A')");
+			statement.execute("INSERT INTO gene VALUES ('NCBIGene:2200', 'FBN1')");
+			statement.execute("INSERT INTO gene VALUES ('NCBIGene:2201', 'FBN2')");
+			statement.execute("INSERT INTO gene_fts (gene_id, name, kind) SELECT id, name, 'primary' FROM gene");
+			for (String synonym : List.of("fibrillin 1", "MFS1", "FBN")) {
+				statement.execute("INSERT INTO gene_fts VALUES ('NCBIGene:2200', '" + synonym + "', 'synonym')");
+			}
+			statement.execute("INSERT INTO gene_fts VALUES ('NCBIGene:2201', 'fibrillin 2', 'synonym')");
 			statement.execute("INSERT INTO disease_gene VALUES ('OMIM:092320', 'NCBIGene:7777')");
 			statement.execute("INSERT INTO disease_gene VALUES ('OMIM:092320', 'NCBIGene:9999')");
 			statement.execute("INSERT INTO gene_phenotype VALUES ('NCBIGene:9999', 'HP:000001')");
@@ -84,7 +93,7 @@ class GeneRepositoryTest implements TestPropertyProvider {
 
 	@Test
 	void findGene() {
-		Collection<Gene> genes = this.geneRepository.findGenes("7777");
+		List<Gene> genes = results("7777");
 		Collection<Gene> expected = List.of(
 				new Gene(TermId.of("NCBIGene:7777"), "MNN")
 		);
@@ -92,29 +101,46 @@ class GeneRepositoryTest implements TestPropertyProvider {
 	}
 
 	@Test
-	void findGenesTreatsSpacesAndHyphensAsWildcards() {
+	void findGenesTreatsSpacesAndHyphensAsSeparators() {
 		Gene hla = new Gene(TermId.of("NCBIGene:3123"), "HLA-DRB1");
 
-		assertTrue(this.geneRepository.findGenes("hla drb1").contains(hla));
-		assertTrue(this.geneRepository.findGenes("HLA-DRB1").contains(hla));
+		assertTrue(results("hla drb1").contains(hla));
+		assertTrue(results("HLA-DRB1").contains(hla));
 	}
 
 	@Test
 	void findGenesRanksExactHyphenatedSymbolFirst() {
-		assertEquals("HLA-A", List.copyOf(this.geneRepository.findGenes("HLA-A")).get(0).getName());
-		assertEquals("HLA-A", List.copyOf(this.geneRepository.findGenes("hla a")).get(0).getName());
+		assertEquals("HLA-A", results("HLA-A").get(0).getName());
+		assertEquals("HLA-A", results("hla a").get(0).getName());
 	}
 
 	@Test
 	void findGenesRanksPrefixMatchesFirstIgnoringSeparators() {
-		List<Gene> genes = List.copyOf(this.geneRepository.findGenes("hla drb1"));
+		List<Gene> genes = results("hla drb1");
 
 		assertEquals("HLA-DRB1", genes.get(0).getName());
 	}
 
 	@Test
 	void findGenesReturnsNothingForSeparatorOnlyQuery() {
-		assertTrue(this.geneRepository.findGenes("-").isEmpty());
-		assertTrue(this.geneRepository.findGenes("- -").isEmpty());
+		assertTrue(results("-").isEmpty());
+		assertTrue(results("- -").isEmpty());
+	}
+
+	@Test void exactSymbolRanksFirst()    { assertEquals("NCBIGene:2200", ids("FBN1").get(0)); }
+	@Test void fullNameHit()              { assertEquals(Set.of("NCBIGene:2200", "NCBIGene:2201"), Set.copyOf(ids("FIBRILLIN"))); }
+	@Test void multiWordFullName()        { assertEquals("NCBIGene:2201", ids("FIBRILLIN 2").get(0)); }
+	@Test void previousSymbolHit()        { assertEquals("NCBIGene:2200", ids("MFS1").get(0)); }
+	@Test void exactSynonymBeatsPrefix()  { assertEquals(List.of("NCBIGene:2200", "NCBIGene:2201"), ids("FBN").subList(0, 2)); }
+	@Test void exactIdRanksFirst()        { assertEquals("NCBIGene:2200", ids("NCBIGENE:2200").get(0)); }
+	@Test void hyphenatedSymbolExactFirst() { assertEquals("NCBIGene:3123", ids("HLA-DRB1").get(0)); }
+	@Test void limitZeroKeepsTotal()      { assertEquals(ids("HLA").size(), geneRepository.searchGenes("HLA", 0, 0).total()); }
+
+	private List<Gene> results(String query) {
+		return geneRepository.searchGenes(query, 0, -1).results();
+	}
+
+	private List<String> ids(String query) {
+		return results(query).stream().map(Gene::getId).toList();
 	}
 }

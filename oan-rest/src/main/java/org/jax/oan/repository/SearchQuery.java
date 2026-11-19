@@ -1,14 +1,12 @@
 package org.jax.oan.repository;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Normalizes free-text search queries so that spaces and hyphens are interchangeable.
+ * Turns free-text search queries into the patterns, keys and full-text expressions the search SQL binds.
  */
 final class SearchQuery {
 	private static final String SEPARATORS = "[-\\s]+";
@@ -26,23 +24,6 @@ final class SearchQuery {
 	static Optional<String> likePattern(String query) {
 		String terms = query.strip().toLowerCase().replaceAll(SEPARATORS, "%").replaceAll("^%+|%+$", "");
 		return terms.isEmpty() ? Optional.empty() : Optional.of("%" + terms + "%");
-	}
-
-	/**
-	 * Orders results so that exact matches come first, then names that start with the query, then everything else.
-	 * Case, spaces and hyphens are ignored when comparing.
-	 *
-	 * @param query the text the user searched for.
-	 * @param name extracts the name to compare from a result.
-	 * @param <T> the result type.
-	 * @return a comparator that ranks results against {@code query}.
-	 */
-	static <T> Comparator<T> ranking(String query, Function<T, String> name) {
-		String key = key(query);
-		return Comparator.comparingInt(result -> {
-			String candidate = key(name.apply(result));
-			return candidate.equals(key) ? 0 : candidate.startsWith(key) ? 1 : 2;
-		});
 	}
 
 	/**
