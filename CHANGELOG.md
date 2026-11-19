@@ -8,7 +8,6 @@
 ### Changed
 - Search results are ranked in SQL: exact id, exact name, exact synonym, name prefix, other word matches by relevance, id substring, then name substring. Words match in any order, and the last word matches as a prefix.
 - Search results are paged in SQL instead of loading every match per request. The response format is unchanged, and every result 1.1.0 returned is still returned.
-- Gene id search is case-insensitive.
 - Upgraded to Micronaut 4.10.24 and Java 21 (build, CI and the `eclipse-temurin:21-jre` Docker image).
 - Annotation processors and libraries (JUnit, Mockito, Hamcrest, Swagger, picocli, logback, snakeyaml) take their versions from the Micronaut BOM instead of local pins.
 - Maven plugins updated (compiler 3.13, surefire 3.5 and the remaining lifecycle plugins).

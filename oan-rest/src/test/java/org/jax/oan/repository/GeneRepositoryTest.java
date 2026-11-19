@@ -61,6 +61,8 @@ class GeneRepositoryTest implements TestPropertyProvider {
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:3105', 'HLA-A')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:2200', 'FBN1')");
 			statement.execute("INSERT INTO gene VALUES ('NCBIGene:2201', 'FBN2')");
+			statement.execute("INSERT INTO gene VALUES ('NCBIGene:6323', 'SCN1A')");
+			statement.execute("INSERT INTO gene VALUES ('NCBIGene:11280', 'SCN11A')");
 			statement.execute("INSERT INTO gene_fts (gene_id, name, kind) SELECT id, name, 'primary' FROM gene");
 			for (String synonym : List.of("fibrillin 1", "MFS1", "FBN")) {
 				statement.execute("INSERT INTO gene_fts VALUES ('NCBIGene:2200', '" + synonym + "', 'synonym')");
@@ -134,6 +136,10 @@ class GeneRepositoryTest implements TestPropertyProvider {
 	@Test void exactSynonymBeatsPrefix()  { assertEquals(List.of("NCBIGene:2200", "NCBIGene:2201"), ids("FBN").subList(0, 2)); }
 	@Test void exactIdRanksFirst()        { assertEquals("NCBIGene:2200", ids("NCBIGENE:2200").get(0)); }
 	@Test void hyphenatedSymbolExactFirst() { assertEquals("NCBIGene:3123", ids("HLA-DRB1").get(0)); }
+	@Test void exactSymbolTypedWithSeparatorRanksFirst() {
+		assertEquals("NCBIGene:6323", ids("SCN 1A").get(0));
+		assertEquals("NCBIGene:6323", ids("SCN-1A").get(0));
+	}
 	@Test void limitZeroKeepsTotal()      { assertEquals(ids("HLA").size(), geneRepository.searchGenes("HLA", 0, 0).total()); }
 
 	private List<Gene> results(String query) {

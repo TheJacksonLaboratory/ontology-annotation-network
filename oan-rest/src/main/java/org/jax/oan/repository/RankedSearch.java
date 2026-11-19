@@ -21,7 +21,9 @@ import java.util.Optional;
  *   <li>id contains the query</li>
  *   <li>primary name contains the query's words in order</li>
  * </ol>
- * Name comparisons in tiers 1&ndash;3 ignore case, spaces and hyphens. Ties are ordered by name, then id.
+ * Name comparisons in tiers 1&ndash;3 ignore case, spaces and hyphens, and apply to primary names found by either the
+ * full-text index or the in-order substring match, so {@code SCN 1A} still ranks {@code SCN1A} in tier 1. Ties are
+ * ordered by name, then id.
  */
 final class RankedSearch {
 	private static final String KEY = "REPLACE(REPLACE(LOWER(name), ' ', ''), '-', '')";
@@ -49,7 +51,8 @@ final class RankedSearch {
 				+ " UNION ALL SELECT id, 0, NULL FROM " + table + " WHERE LOWER(id) = ?"
 				+ (matchMondoId ? " OR LOWER(mondo_id) = ?" : "")
 				+ " UNION ALL SELECT id, 5, NULL FROM " + table + " WHERE LOWER(id) LIKE ?"
-				+ " UNION ALL SELECT id, 6, NULL FROM " + table + " WHERE LOWER(name) LIKE ?"
+				+ " UNION ALL SELECT id, CASE WHEN " + KEY + " = ? THEN 1 WHEN " + KEY + " LIKE ? THEN 3 ELSE 6 END, NULL"
+				+ " FROM " + table + " WHERE LOWER(name) LIKE ?"
 				+ "), ranked AS (SELECT id, MIN(tier) AS tier, MIN(score) AS score FROM hits GROUP BY id) ";
 	}
 
@@ -131,6 +134,8 @@ final class RankedSearch {
 			statement.setString(i++, q);
 		}
 		statement.setString(i++, "%" + q + "%");
+		statement.setString(i++, key);
+		statement.setString(i++, key + "%");
 		statement.setString(i++, like);
 		return i;
 	}

@@ -63,6 +63,9 @@ class DiseaseRepositoryTest implements TestPropertyProvider {
 			statement.execute("INSERT INTO disease VALUES ('OMIM:115150', 'Cardiofaciocutaneous syndrome', '', '')");
 			statement.execute("INSERT INTO disease VALUES ('ORPHA:2322', 'Kabadi syndrome', '', '')");
 			statement.execute("INSERT INTO disease VALUES ('ORPHA:558', 'Marfan syndrome type 1', 'MONDO:0007947', '')");
+			statement.execute("INSERT INTO disease VALUES ('OMIM:900001', 'Loss or gain of function disorder', '', '')");
+			statement.execute("INSERT INTO disease VALUES ('OMIM:900002', 'Hearing loss', '', '')");
+			statement.execute("INSERT INTO disease VALUES ('OMIM:900003', 'Not near normal growth', '', '')");
 			statement.execute("INSERT INTO disease_fts (disease_id, name, kind) SELECT id, name, 'primary' FROM disease");
 			statement.execute("INSERT INTO disease_fts VALUES ('OMIM:154700', 'MFS', 'synonym')");
 			statement.execute("INSERT INTO disease_fts VALUES ('OMIM:105400', 'ALS', 'synonym')");
@@ -182,12 +185,15 @@ class DiseaseRepositoryTest implements TestPropertyProvider {
 		assertTrue(ids("ARDIO").contains("OMIM:115150"));
 	}
 	@Test void punctuationIsTokenized() { assertEquals("OMIM:154700", ids("MARFAN-SYNDROME").get(0)); }
-	@Test void operatorWordsDoNotThrow() {
-		assertNotNull(diseaseRepository.searchDiseases("LOSS OR GAIN", 0, 10));
-		assertNotNull(diseaseRepository.searchDiseases("NOT NEAR", 0, 10));
+	@Test void operatorWordsMatchAsText() {
+		assertEquals(List.of("OMIM:900001"), ids("LOSS OR GAIN"));
+		assertEquals(List.of("OMIM:900003"), ids("NOT NEAR"));
 	}
 	@Test void noTokensReturnsEmpty()   { assertEquals(new SearchPage<>(List.of(), 0), diseaseRepository.searchDiseases("-", 0, 10)); }
-	@Test void totalCountsEntities()    { assertEquals(ids("MARFAN").size(), diseaseRepository.searchDiseases("MARFAN", 0, 1).total()); }
+	@Test void totalCountsEntities() {
+		assertEquals(Set.of("OMIM:154700", "ORPHA:558"), Set.copyOf(ids("MARFAN")));
+		assertEquals(2, diseaseRepository.searchDiseases("MARFAN", 0, 1).total());
+	}
 	@Test void pagesAreStableSlices() {
 		assertEquals(ids("SYNDROME").subList(1, 3),
 			diseaseRepository.searchDiseases("SYNDROME", 1, 2).results().stream().map(Disease::getId).toList());

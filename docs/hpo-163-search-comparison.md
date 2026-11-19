@@ -14,6 +14,7 @@ python3 -I scripts/hpo-163/compare_search.py diff --old old.json --new new.json 
 - **Baseline check:** the 1.1.0 server returned `loeys dietz` → 7 and `x linked` → 346, the same totals as production on 2026-11-18 (`Plan/oan-cutover/prod-sqlite-2026-11-18.tsv`).
 - **Database size:** 61.5 MB without the FTS tables and 95.9 MB with them, an increase of 34.5 MB. The tables hold 12,833 disease and 44,403 gene primary names, plus 54,743 disease and 152,862 gene synonyms.
 - **Speed, `limit=10` locally:** `a` takes 0.08 s on both servers and `ma` 0.02 s on both. With `limit=-1`, the slowest query was gene `a` (19,264 results) at 0.14 s.
+- **Separators:** `SCN 1A` and `FBN 1` rank the exact symbol first, as 1.1.0 did (fixed after the branch review).
 - **Ranking:** `cystic fibrosis transmembrane` ranks CFTR 4th. Three pseudogene and antisense genes with shorter matching synonyms score higher on `bm25`. The result still passes the gate (top 10).
 - **Not yet run:** the SQA k6 load check, and recording production for reference.
 
@@ -25,65 +26,68 @@ LOST 0, MISS 0, RANK 0, SLOW 0
 
 | entity | query | old total | new total | old s | new s | expected (old→new rank) | flags | new ids (not in old, first 5) |
 |---|---|---|---|---|---|---|---|---|
-| gene | `FBN1` | 2 | 2 | 0.017 | 0.023 | NCBIGene:2200 (1→1) |  |  |
+| gene | `FBN1` | 2 | 2 | 0.018 | 0.024 | NCBIGene:2200 (1→1) |  |  |
 | disease | `marfan` | 9 | 14 | 0.008 | 0.01 |  |  | OMIM:182212, ORPHA:2462, OMIM:309520, ORPHA:776, OMIM:617602 |
-| disease | `epilepsy` | 162 | 232 | 0.01 | 0.013 |  |  | ORPHA:1934, OMIM:614558, OMIM:300607, OMIM:309530, ORPHA:3006 |
-| disease | `loeys dietz` | 7 | 8 | 0.008 | 0.01 |  |  | ORPHA:284984 |
-| disease | `x linked` | 346 | 635 | 0.011 | 0.019 |  |  | OMIM:313900, ORPHA:293707, OMIM:300200, OMIM:300100, ORPHA:2239 |
-| gene | `hla drb1` | 1 | 2 | 0.01 | 0.017 | NCBIGene:3123 (1→1) |  | NCBIGene:3132 |
-| disease | `marfan syndrome` | 7 | 7 | 0.007 | 0.012 | OMIM:154700 (2→1) |  |  |
-| disease | `cystic fibrosis` | 4 | 4 | 0.007 | 0.011 | OMIM:219700 (1→1) |  |  |
+| disease | `epilepsy` | 162 | 232 | 0.01 | 0.014 |  |  | ORPHA:1934, OMIM:614558, OMIM:300607, OMIM:309530, ORPHA:3006 |
+| disease | `loeys dietz` | 7 | 8 | 0.007 | 0.01 |  |  | ORPHA:284984 |
+| disease | `x linked` | 346 | 635 | 0.011 | 0.02 |  |  | OMIM:313900, ORPHA:293707, OMIM:300200, OMIM:300100, ORPHA:2239 |
+| gene | `hla drb1` | 1 | 2 | 0.011 | 0.016 | NCBIGene:3123 (1→1) |  | NCBIGene:3132 |
+| disease | `marfan syndrome` | 7 | 7 | 0.007 | 0.011 | OMIM:154700 (2→1) |  |  |
+| disease | `cystic fibrosis` | 4 | 4 | 0.007 | 0.01 | OMIM:219700 (1→1) |  |  |
 | disease | `tuberous sclerosis` | 4 | 4 | 0.007 | 0.01 |  |  |  |
-| disease | `noonan syndrome` | 22 | 25 | 0.007 | 0.011 |  |  | OMIM:613091, ORPHA:93271, OMIM:613707 |
-| disease | `ehlers danlos syndrome` | 42 | 49 | 0.008 | 0.012 |  |  | OMIM:616471, OMIM:618343, ORPHA:90354, ORPHA:2295, OMIM:304150 |
-| disease | `spinal muscular atrophy` | 36 | 45 | 0.008 | 0.01 |  |  | OMIM:602440, ORPHA:276435, ORPHA:65684, OMIM:600175, ORPHA:139536 |
+| disease | `noonan syndrome` | 22 | 25 | 0.008 | 0.011 |  |  | OMIM:613091, ORPHA:93271, OMIM:613707 |
+| disease | `ehlers danlos syndrome` | 42 | 49 | 0.008 | 0.011 |  |  | OMIM:616471, OMIM:618343, ORPHA:90354, ORPHA:2295, OMIM:304150 |
+| disease | `spinal muscular atrophy` | 36 | 45 | 0.007 | 0.011 |  |  | OMIM:602440, ORPHA:276435, ORPHA:65684, OMIM:600175, ORPHA:139536 |
 | disease | `duchenne muscular dystrophy` | 2 | 3 | 0.007 | 0.01 |  |  | ORPHA:206546 |
-| disease | `developmental and epileptic encephalopathy` | 68 | 136 | 0.008 | 0.012 |  |  | ORPHA:324422, ORPHA:505652, OMIM:615369, ORPHA:411986, OMIM:613721 |
-| disease | `syndrome marfan` | 0 | 11 | 0.008 | 0.01 | OMIM:154700 (None→1) |  | OMIM:154700, ORPHA:558, OMIM:616914, ORPHA:284979, OMIM:182212 |
-| disease | `dietz loeys` | 0 | 8 | 0.008 | 0.01 |  |  | ORPHA:60030, ORPHA:284984, OMIM:609192, OMIM:610168, OMIM:613795 |
-| disease | `fibrosis cystic` | 0 | 4 | 0.007 | 0.01 | OMIM:219700 (None→1) |  | OMIM:219700, ORPHA:586, OMIM:603855, ORPHA:2575 |
+| disease | `developmental and epileptic encephalopathy` | 68 | 136 | 0.007 | 0.011 |  |  | ORPHA:324422, ORPHA:505652, OMIM:615369, ORPHA:411986, OMIM:613721 |
+| disease | `syndrome marfan` | 0 | 11 | 0.007 | 0.01 | OMIM:154700 (None→1) |  | OMIM:154700, ORPHA:558, OMIM:616914, ORPHA:284979, OMIM:182212 |
+| disease | `dietz loeys` | 0 | 8 | 0.007 | 0.01 |  |  | ORPHA:60030, ORPHA:284984, OMIM:609192, OMIM:610168, OMIM:613795 |
+| disease | `fibrosis cystic` | 0 | 4 | 0.007 | 0.009 | OMIM:219700 (None→1) |  | OMIM:219700, ORPHA:586, OMIM:603855, ORPHA:2575 |
 | disease | `dystrophy duchenne` | 1 | 3 | 0.007 | 0.01 |  |  | OMIM:310200, ORPHA:98896 |
 | disease | `syndrome noonan` | 0 | 25 | 0.007 | 0.01 |  |  | ORPHA:648, OMIM:613091, OMIM:601321, ORPHA:638, OMIM:163950 |
-| disease | `linked x intellectual` | 0 | 195 | 0.007 | 0.013 |  |  | ORPHA:485350, OMIM:309530, OMIM:300923, OMIM:300928, OMIM:300982 |
-| disease | `marfan synd` | 7 | 7 | 0.007 | 0.011 | OMIM:154700 (2→1) |  |  |
+| disease | `linked x intellectual` | 0 | 195 | 0.007 | 0.014 |  |  | ORPHA:485350, OMIM:309530, OMIM:300923, OMIM:300928, OMIM:300982 |
+| disease | `marfan synd` | 7 | 7 | 0.007 | 0.012 | OMIM:154700 (2→1) |  |  |
 | disease | `cystic fib` | 4 | 4 | 0.007 | 0.01 | OMIM:219700 (1→1) |  |  |
 | disease | `tuberous scl` | 4 | 4 | 0.007 | 0.01 |  |  |  |
-| disease | `noonan syn` | 22 | 25 | 0.008 | 0.01 |  |  | OMIM:613091, ORPHA:93271, OMIM:613707 |
+| disease | `noonan syn` | 22 | 25 | 0.007 | 0.011 |  |  | OMIM:613091, ORPHA:93271, OMIM:613707 |
 | disease | `ehlers dan` | 42 | 50 | 0.008 | 0.011 |  |  | OMIM:616471, OMIM:300049, OMIM:618343, ORPHA:90354, ORPHA:2295 |
 | disease | `spinal muscular atr` | 36 | 45 | 0.008 | 0.011 |  |  | OMIM:602440, ORPHA:276435, ORPHA:65684, OMIM:600175, ORPHA:139536 |
-| disease | `bardet bie` | 23 | 23 | 0.007 | 0.009 |  |  |  |
-| disease | `prader wil` | 9 | 14 | 0.007 | 0.009 |  |  | OMIM:619326, ORPHA:3409, OMIM:615547, ORPHA:398069, ORPHA:171829 |
-| disease | `Prader-Willi syndrome` | 9 | 14 | 0.007 | 0.011 |  |  | OMIM:619326, ORPHA:3409, OMIM:615547, ORPHA:398069, ORPHA:171829 |
-| disease | `Angelman syndrome` | 6 | 9 | 0.007 | 0.011 |  |  | ORPHA:228402, ORPHA:85278, OMIM:300243 |
-| disease | `Rett syndrome` | 6 | 7 | 0.007 | 0.011 |  |  | ORPHA:561854 |
-| disease | `Williams syndrome` | 4 | 10 | 0.006 | 0.01 |  |  | OMIM:277590, ORPHA:3447, OMIM:139600, ORPHA:2220, ORPHA:2835 |
-| disease | `Fragile X syndrome` | 4 | 4 | 0.007 | 0.011 |  |  |  |
+| disease | `bardet bie` | 23 | 23 | 0.007 | 0.01 |  |  |  |
+| disease | `prader wil` | 9 | 14 | 0.007 | 0.01 |  |  | OMIM:619326, ORPHA:3409, OMIM:615547, ORPHA:398069, ORPHA:171829 |
+| disease | `Prader-Willi syndrome` | 9 | 14 | 0.008 | 0.011 |  |  | OMIM:619326, ORPHA:3409, OMIM:615547, ORPHA:398069, ORPHA:171829 |
+| disease | `Angelman syndrome` | 6 | 9 | 0.01 | 0.012 |  |  | ORPHA:228402, ORPHA:85278, OMIM:300243 |
+| disease | `Rett syndrome` | 6 | 7 | 0.008 | 0.011 |  |  | ORPHA:561854 |
+| disease | `Williams syndrome` | 4 | 10 | 0.007 | 0.01 |  |  | OMIM:277590, ORPHA:3447, OMIM:139600, ORPHA:2220, ORPHA:2835 |
+| disease | `Fragile X syndrome` | 4 | 4 | 0.008 | 0.01 |  |  |  |
 | disease | `Huntington disease` | 10 | 12 | 0.007 | 0.01 |  |  | OMIM:607136, ORPHA:98759 |
 | gene | `TP53` | 23 | 66 | 0.01 | 0.016 | NCBIGene:7157 (1→1) |  | NCBIGene:338440, NCBIGene:100129046, NCBIGene:9538, NCBIGene:8507, NCBIGene:339476 |
-| gene | `BRCA1` | 3 | 19 | 0.01 | 0.016 | NCBIGene:672 (1→1) |  | NCBIGene:8315, NCBIGene:25920, NCBIGene:8314, NCBIGene:83990, NCBIGene:580 |
-| gene | `CFTR` | 5 | 18 | 0.009 | 0.016 | NCBIGene:1080 (1→1) |  | NCBIGene:5174, NCBIGene:4363, NCBIGene:89845, NCBIGene:85320, NCBIGene:94160 |
-| gene | `HLA-A` | 12 | 27 | 0.009 | 0.02 | NCBIGene:3105 (1→1) |  | NCBIGene:7920, NCBIGene:7917, NCBIGene:7919, NCBIGene:10919, NCBIGene:7918 |
-| gene | `MECP2` | 1 | 1 | 0.01 | 0.016 | NCBIGene:4204 (1→1) |  |  |
-| gene | `SCN1A` | 2 | 2 | 0.01 | 0.016 | NCBIGene:6323 (1→1) |  |  |
-| gene | `fibrillin 1` | 0 | 1 | 0.009 | 0.02 | NCBIGene:2200 (None→1) |  | NCBIGene:2200 |
-| gene | `tumor protein p53` | 0 | 14 | 0.01 | 0.017 | NCBIGene:7157 (None→1) |  | NCBIGene:7157, NCBIGene:8626, NCBIGene:338440, NCBIGene:9536, NCBIGene:7158 |
-| gene | `cystic fibrosis transmembrane` | 0 | 4 | 0.01 | 0.016 | NCBIGene:1080 (None→4) |  | NCBIGene:140871, NCBIGene:107080633, NCBIGene:106481718, NCBIGene:1080 |
-| disease | `BBS1` | 0 | 11 | 0.006 | 0.01 |  |  | OMIM:209900, OMIM:615987, OMIM:615988, OMIM:615989, OMIM:615990 |
-| gene | `SEC18` | 0 | 1 | 0.011 | 0.016 | NCBIGene:4905 (None→1) |  | NCBIGene:4905 |
-| gene | `SKD2` | 0 | 2 | 0.01 | 0.016 | NCBIGene:4905 (None→1) |  | NCBIGene:4905, NCBIGene:27183 |
-| disease | `ardio` | 159 | 159 | 0.01 | 0.011 |  |  |  |
-| disease | `trophy` | 574 | 574 | 0.012 | 0.014 |  |  |  |
-| disease | `154700` | 1 | 1 | 0.007 | 0.01 | OMIM:154700 (1→1) |  |  |
+| gene | `BRCA1` | 3 | 19 | 0.009 | 0.016 | NCBIGene:672 (1→1) |  | NCBIGene:8315, NCBIGene:25920, NCBIGene:8314, NCBIGene:83990, NCBIGene:580 |
+| gene | `CFTR` | 5 | 18 | 0.01 | 0.017 | NCBIGene:1080 (1→1) |  | NCBIGene:5174, NCBIGene:4363, NCBIGene:89845, NCBIGene:85320, NCBIGene:94160 |
+| gene | `HLA-A` | 12 | 27 | 0.01 | 0.021 | NCBIGene:3105 (1→1) |  | NCBIGene:7920, NCBIGene:7917, NCBIGene:7919, NCBIGene:10919, NCBIGene:7918 |
+| gene | `MECP2` | 1 | 1 | 0.01 | 0.017 | NCBIGene:4204 (1→1) |  |  |
+| gene | `SCN1A` | 2 | 2 | 0.01 | 0.019 | NCBIGene:6323 (1→1) |  |  |
+| gene | `fibrillin 1` | 0 | 1 | 0.01 | 0.021 | NCBIGene:2200 (None→1) |  | NCBIGene:2200 |
+| gene | `tumor protein p53` | 0 | 14 | 0.01 | 0.016 | NCBIGene:7157 (None→1) |  | NCBIGene:7157, NCBIGene:8626, NCBIGene:338440, NCBIGene:9536, NCBIGene:7158 |
+| gene | `cystic fibrosis transmembrane` | 0 | 4 | 0.011 | 0.016 | NCBIGene:1080 (None→4) |  | NCBIGene:140871, NCBIGene:107080633, NCBIGene:106481718, NCBIGene:1080 |
+| disease | `BBS1` | 0 | 11 | 0.007 | 0.01 |  |  | OMIM:209900, OMIM:615987, OMIM:615988, OMIM:615989, OMIM:615990 |
+| gene | `SEC18` | 0 | 1 | 0.01 | 0.017 | NCBIGene:4905 (None→1) |  | NCBIGene:4905 |
+| gene | `SKD2` | 0 | 2 | 0.01 | 0.015 | NCBIGene:4905 (None→1) |  | NCBIGene:4905, NCBIGene:27183 |
+| disease | `ardio` | 159 | 159 | 0.009 | 0.011 |  |  |  |
+| disease | `trophy` | 574 | 574 | 0.011 | 0.015 |  |  |  |
+| disease | `154700` | 1 | 1 | 0.007 | 0.009 | OMIM:154700 (1→1) |  |  |
 | disease | `OMIM:154700` | 1 | 1 | 0.007 | 0.01 | OMIM:154700 (1→1) |  |  |
 | gene | `NCBIGene:2200` | 12 | 12 | 0.011 | 0.017 | NCBIGene:2200 (1→1) |  |  |
-| disease | `MONDO:0007947` | 0 | 2 | 0.008 | 0.01 |  |  | OMIM:154700, ORPHA:558 |
-| disease | `loss or gain` | 0 | 0 | 0.008 | 0.01 |  |  |  |
-| disease | `not near` | 0 | 0 | 0.008 | 0.01 |  |  |  |
-| disease | `a` | 12051 | 12253 | 0.112 | 0.161 |  |  | OMIM:300855, OMIM:616005, OMIM:300310, OMIM:137600, OMIM:101600 |
-| disease | `ma` | 3503 | 3910 | 0.037 | 0.046 |  |  | ORPHA:950, OMIM:257350, OMIM:153550, ORPHA:1942, ORPHA:99802 |
-| gene | `hl` | 187 | 322 | 0.011 | 0.018 |  |  | NCBIGene:3155, NCBIGene:3990, NCBIGene:646023, NCBIGene:109729172, NCBIGene:10878 |
-| gene | `fb` | 260 | 300 | 0.011 | 0.017 |  |  | NCBIGene:1175, NCBIGene:26053, NCBIGene:80127, NCBIGene:8945, NCBIGene:899 |
-| gene | `a` | 14631 | 19264 | 0.037 | 0.142 |  |  | NCBIGene:171022, NCBIGene:967, NCBIGene:729970, NCBIGene:23549, NCBIGene:100507466 |
+| disease | `MONDO:0007947` | 0 | 2 | 0.007 | 0.01 |  |  | OMIM:154700, ORPHA:558 |
+| disease | `loss or gain` | 0 | 0 | 0.007 | 0.01 |  |  |  |
+| disease | `not near` | 0 | 0 | 0.007 | 0.01 |  |  |  |
+| disease | `a` | 12051 | 12253 | 0.115 | 0.167 |  |  | OMIM:300855, OMIM:616005, OMIM:300310, OMIM:137600, OMIM:101600 |
+| disease | `ma` | 3503 | 3910 | 0.038 | 0.048 |  |  | ORPHA:950, OMIM:257350, OMIM:153550, ORPHA:1942, ORPHA:99802 |
+| gene | `hl` | 187 | 322 | 0.011 | 0.019 |  |  | NCBIGene:3155, NCBIGene:3990, NCBIGene:646023, NCBIGene:109729172, NCBIGene:10878 |
+| gene | `fb` | 260 | 300 | 0.01 | 0.019 |  |  | NCBIGene:1175, NCBIGene:26053, NCBIGene:80127, NCBIGene:8945, NCBIGene:899 |
+| gene | `a` | 14631 | 19264 | 0.036 | 0.151 |  |  | NCBIGene:171022, NCBIGene:967, NCBIGene:729970, NCBIGene:23549, NCBIGene:100507466 |
+| gene | `SCN 1A` | 4 | 4 | 0.01 | 0.017 | NCBIGene:6323 (1→1) |  |  |
+| gene | `FBN 1` | 2 | 2 | 0.01 | 0.018 | NCBIGene:2200 (1→1) |  |  |
+| disease | `cardio myopathy` | 118 | 119 | 0.008 | 0.011 |  |  | OMIM:614052 |
 
 ## Top 10 before and after
 
@@ -146,3 +150,6 @@ LOST 0, MISS 0, RANK 0, SLOW 0
 - **gene `hl`** — old top 10: NCBIGene:3105, NCBIGene:3106, NCBIGene:3107, NCBIGene:3108, NCBIGene:3109, NCBIGene:3111, NCBIGene:3112, NCBIGene:3113, NCBIGene:646702, NCBIGene:267013; new top 10: NCBIGene:3155, NCBIGene:3990, NCBIGene:3138, NCBIGene:3139, NCBIGene:3141, NCBIGene:3131, NCBIGene:100873813, NCBIGene:100507389, NCBIGene:6596, NCBIGene:3142
 - **gene `fb`** — old top 10: NCBIGene:85302, NCBIGene:84893, NCBIGene:2091, NCBIGene:54751, NCBIGene:392536, NCBIGene:401679, NCBIGene:345630, NCBIGene:2192, NCBIGene:2199, NCBIGene:10516; new top 10: NCBIGene:85302, NCBIGene:84893, NCBIGene:2091, NCBIGene:54751, NCBIGene:392536, NCBIGene:401679, NCBIGene:345630, NCBIGene:2192, NCBIGene:2199, NCBIGene:10516
 - **gene `a`** — old top 10: NCBIGene:1, NCBIGene:503538, NCBIGene:29974, NCBIGene:2, NCBIGene:144571, NCBIGene:144568, NCBIGene:100874108, NCBIGene:106478979, NCBIGene:127550, NCBIGene:53947; new top 10: NCBIGene:166378, NCBIGene:79029, NCBIGene:503538, NCBIGene:144571, NCBIGene:100874108, NCBIGene:106478979, NCBIGene:101928142, NCBIGene:51166, NCBIGene:104355297, NCBIGene:100873982
+- **gene `SCN 1A`** — old top 10: NCBIGene:6323, NCBIGene:101929680, NCBIGene:11280, NCBIGene:6337; new top 10: NCBIGene:6323, NCBIGene:101929680, NCBIGene:11280, NCBIGene:6337
+- **gene `FBN 1`** — old top 10: NCBIGene:2200, NCBIGene:105370809; new top 10: NCBIGene:2200, NCBIGene:105370809
+- **disease `cardio myopathy`** — old top 10: OMIM:615235, OMIM:615248, OMIM:302045, OMIM:615184, ORPHA:91130, OMIM:605676, OMIM:604288, OMIM:605582, OMIM:604765, OMIM:301163; new top 10: OMIM:212130, OMIM:115200, OMIM:612158, OMIM:600884, OMIM:612877, OMIM:601493, OMIM:601494, OMIM:613172, OMIM:601154, OMIM:613252
