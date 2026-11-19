@@ -323,4 +323,53 @@ class HpoOntologyAnnotationLoaderTest {
 		assertEquals(hgnc, graphLoader.deduplicateHgncEntrezIds(hgnc));
 	}
 
+	@Test
+	void diseaseFtsRows() throws Exception {
+		assertEquals(List.of("Fake Orphanet disease"), names("disease_fts", "disease_id", "ORPHA:99999", "primary"));
+		assertEquals(Set.of("Bardet-Biedl Syndrome 1", "BBS1", "Bardet-Biedl syndrome type 1"),
+			Set.copyOf(names("disease_fts", "disease_id", "ORPHA:99999", "synonym")));
+		assertEquals(3, count("SELECT COUNT(*) FROM disease_fts WHERE kind = 'primary'"));
+	}
+
+	@Test
+	void geneFtsRows() throws Exception {
+		assertEquals(List.of("NSF"), names("gene_fts", "gene_id", "NCBIGene:4905", "primary"));
+		assertTrue(names("gene_fts", "gene_id", "NCBIGene:4905", "synonym").containsAll(List.of("SKD2", "SEC18")));
+		assertEquals(count("SELECT COUNT(*) FROM gene_fts"), count("SELECT COUNT(DISTINCT gene_id || LOWER(name)) FROM gene_fts"));
+	}
+
+	@Test
+	void ftsMatchFindsSynonym() throws Exception {
+		assertEquals(1, count("SELECT COUNT(*) FROM gene_fts WHERE gene_fts MATCH '\"sec18\"'"));
+		assertEquals(1, count("SELECT COUNT(*) FROM disease_fts WHERE disease_fts MATCH '\"bbs1\"'"));
+		assertTrue(count("SELECT COUNT(*) FROM gene_fts WHERE gene_fts MATCH '\"se\"*'") >= 1);
+	}
+
+	@Test
+	void ftsTablesExist() throws Exception {
+		assertEquals(2, count("SELECT COUNT(*) FROM sqlite_master WHERE name IN ('disease_fts', 'gene_fts')"));
+		assertTrue(count("SELECT COUNT(*) FROM disease_fts") > 0);
+		assertTrue(count("SELECT COUNT(*) FROM gene_fts") > 0);
+	}
+
+	private List<String> names(String table, String idColumn, String id, String kind) throws Exception {
+		List<String> names = new ArrayList<>();
+		try (var statement = sqliteWriter.connection().prepareStatement(
+				"SELECT name FROM " + table + " WHERE " + idColumn + " = ? AND kind = ? ORDER BY rowid")) {
+			statement.setString(1, id);
+			statement.setString(2, kind);
+			try (var rs = statement.executeQuery()) {
+				while (rs.next()) names.add(rs.getString(1));
+			}
+		}
+		return names;
+	}
+
+	private int count(String sql) throws Exception {
+		try (var statement = sqliteWriter.connection().createStatement(); var rs = statement.executeQuery(sql)) {
+			rs.next();
+			return rs.getInt(1);
+		}
+	}
+
 }

@@ -59,6 +59,27 @@
         "xrefs" : [{
           "val" : "Orphanet:99999"
         }],
+        "synonyms" : [ {
+          "pred" : "hasExactSynonym",
+          "val" : "BBS1",
+          "xrefs" : [ ]
+        }, {
+          "pred" : "hasRelatedSynonym",
+          "val" : "Bardet-Biedl syndrome type 1",
+          "xrefs" : [ ]
+        }, {
+          "pred" : "hasNarrowSynonym",
+          "val" : "BBS narrow test",
+          "xrefs" : [ ]
+        }, {
+          "pred" : "hasBroadSynonym",
+          "val" : "BBS broad test",
+          "xrefs" : [ ]
+        }, {
+          "pred" : "hasExactSynonym",
+          "val" : "fake orphanet DISEASE",
+          "xrefs" : [ ]
+        } ],
         "basicPropertyValues" : [ {
           "pred" : "http://www.geneontology.org/formats/oboInOwl#hasOBONamespace",
           "val" : "disease_ontology"
