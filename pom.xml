@@ -6,7 +6,7 @@
   <groupId>org.jax.oan</groupId>
   <artifactId>ontology-annotation-network</artifactId>
   <packaging>pom</packaging>
-  <version>1.1.0</version>
+  <version>1.1.1</version>
 
   <name>ontology-annotation-network</name>
   <url>https://github.com/TheJacksonLaboratory/ontology-annotation-network</url>
@@ -14,20 +14,11 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.version>17</java.version>
-    <maven.compiler.source>${java.version}</maven.compiler.source>
-    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <java.version>21</java.version>
+    <maven.compiler.release>${java.version}</maven.compiler.release>
 
-    <micronaut.version>4.1.0</micronaut.version>
+    <micronaut.version>4.10.24</micronaut.version>
     <phenol.version>2.1.4</phenol.version>
-    <hamcrest.version>2.2</hamcrest.version>
-    <junit-jupiter.version>5.10.0</junit-jupiter.version>
-    <mockito.version>5.3.1</mockito.version>
-    <javars.version>2.1.1</javars.version>
-    <neo4j.version>5.13.0</neo4j.version>
-    <swagger.version>2.2.20</swagger.version>
-    <picocli.version>4.7.5</picocli.version>
-    <logback.version>1.4.12</logback.version>
   </properties>
 
   <modules>
@@ -87,69 +78,6 @@
           </exclusion>
         </exclusions>
       </dependency>
-      <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
-        <version>1.4.8</version>
-      </dependency>
-      <dependency>
-        <groupId>io.swagger.core.v3</groupId>
-        <artifactId>swagger-annotations</artifactId>
-        <version>${swagger.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>info.picocli</groupId>
-        <artifactId>picocli</artifactId>
-        <version>${picocli.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.yaml</groupId>
-        <artifactId>snakeyaml</artifactId>
-        <version>2.0</version>
-        <scope>runtime</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.neo4j.test</groupId>
-        <artifactId>neo4j-harness</artifactId>
-        <version>${neo4j.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter</artifactId>
-        <version>${junit-jupiter.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-junit-jupiter</artifactId>
-        <version>${mockito.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.hamcrest</groupId>
-        <artifactId>hamcrest</artifactId>
-        <version>${hamcrest.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>javax.ws.rs</groupId>
-        <artifactId>javax.ws.rs-api</artifactId>
-        <version>${javars.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>javax.annotation</groupId>
-        <artifactId>javax.annotation-api</artifactId>
-        <version>1.3.2</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>javax.validation</groupId>
-        <artifactId>validation-api</artifactId>
-        <version>2.0.1.Final</version>
-        <scope>test</scope>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -157,22 +85,13 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
     </dependency>
   </dependencies>
-
-  <pluginRepositories>
-    <pluginRepository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </pluginRepository>
-  </pluginRepositories>
 
   <build>
     <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
@@ -197,70 +116,66 @@
         <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.4.0</version>
         </plugin>
         <!-- default lifecycle, jar packaging: see https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>3.3.1</version>
         </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.0</version>
+          <version>3.13.0</version>
           <configuration>
+            <!-- Processor versions are resolved from the micronaut-platform BOM (maven-compiler-plugin 3.12+) -->
             <annotationProcessorPaths>
               <path>
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-inject-java</artifactId>
-                <version>4.1.3</version>
               </path>
               <path>
                 <groupId>info.picocli</groupId>
                 <artifactId>picocli-codegen</artifactId>
-                <version>${picocli.version}</version>
               </path>
               <path>
                 <groupId>io.micronaut.openapi</groupId>
                 <artifactId>micronaut-openapi</artifactId>
-                <version>5.1.1</version>
               </path>
               <path>
                 <groupId>io.micronaut.serde</groupId>
                 <artifactId>micronaut-serde-processor</artifactId>
-                <version>2.2.4</version>
               </path>
               <path>
                 <groupId>io.micronaut.validation</groupId>
                 <artifactId>micronaut-validation-processor</artifactId>
-                <version>${micronaut.version}</version>
               </path>
             </annotationProcessorPaths>
           </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.1</version>
+          <version>3.5.2</version>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>3.4.2</version>
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
-          <version>2.5.2</version>
+          <version>3.1.3</version>
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
-          <version>2.8.2</version>
+          <version>3.1.3</version>
         </plugin>
         <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
         <plugin>
           <artifactId>maven-site-plugin</artifactId>
-          <version>3.7.1</version>
+          <version>3.21.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.8.0</version>
         </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>

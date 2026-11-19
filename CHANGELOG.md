@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+### Changed
+- Upgraded to Micronaut 4.10.24 and Java 21 (build, CI and the `eclipse-temurin:21-jre` Docker image).
+- Annotation processors and libraries (JUnit, Mockito, Hamcrest, Swagger, picocli, logback, snakeyaml) take their versions from the Micronaut BOM instead of local pins.
+- Maven plugins updated (compiler 3.13, surefire 3.5 and the remaining lifecycle plugins).
+- The generated OpenAPI spec no longer marks the `page` and `limit` search parameters as required; both have defaults.
+
+### Removed
+- Unused `javax.*` and `neo4j-harness` test dependencies.
+- REST Assured and the serde annotation processor are no longer bundled into the oan-rest jar.
+- Snapshot versioning: `snapshot-version.sh`, the Sonatype snapshots plugin repository and `--update-snapshots` in the PR build.
+
 ## 1.1.0 - 2026-11-18
 ### Changed
 - Replaced Neo4j with an embedded SQLite database in both oan-etl and oan-rest. The API is unchanged.

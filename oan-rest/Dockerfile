@@ -1,5 +1,5 @@
 # Set up running image
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 
 ARG MICRONAUT_ENV_ARG
 ARG VERSION_ARG

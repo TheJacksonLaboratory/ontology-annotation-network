@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.jax.oan</groupId>
         <artifactId>ontology-annotation-network</artifactId>
-        <version>1.1.0</version>
+        <version>1.1.1</version>
     </parent>
 
     <artifactId>oan-etl</artifactId>
@@ -51,21 +51,6 @@
             <version>3.45.1.0</version>
         </dependency>
         <!-- Test -->
-        <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>io.micronaut</groupId>
             <artifactId>micronaut-http-client</artifactId>

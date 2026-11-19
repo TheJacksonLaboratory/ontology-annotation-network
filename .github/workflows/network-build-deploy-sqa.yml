@@ -1,11 +1,20 @@
 name: Build & Deploy Ontology Annotation Network (SQA)
 on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened, ready_for_review ]
   workflow_dispatch:
     inputs:
       ref:
         description: Branch, tag or SHA to build and deploy to SQA
         required: true
         default: main
+
+# One SQA service: a newer run replaces any deploy still in progress.
+concurrency:
+  group: deploy-sqa
+  cancel-in-progress: true
+
 env:
   GCLOUD_PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
   GCLOUD_REGION: us-east1
@@ -17,17 +26,22 @@ env:
 
 jobs:
   build:
+    # PRs: skip drafts, and forks (they get no secrets).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (!github.event.pull_request.draft &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout requested ref
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || inputs.ref }}
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v6
         with:
-          java-version: 17
+          java-version: 21
           distribution: temurin
 
       - name: Authenticate to Google Cloud
@@ -40,7 +54,7 @@ jobs:
 
       - name: Get project version
         run: |
-          echo "PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-sqa-${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)-sqa-$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
           echo "MVN_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
 
       - name: Set our docker image name
