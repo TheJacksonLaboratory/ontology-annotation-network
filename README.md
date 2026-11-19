@@ -2,12 +2,11 @@
 
 *A graph to maintain our ontology annotation connections.*
 
-Java 17
+Java 21
 
-Micronaut 4.1.2
-- [User Guide](https://docs.micronaut.io/4.1.2/guide/index.html)
-- [API Reference](https://docs.micronaut.io/4.1.2/api/index.html)
-- [Configuration Reference](https://docs.micronaut.io/4.1.2/guide/configurationreference.html)
+Micronaut 4.10.24
+- [User Guide](https://docs.micronaut.io/4.10.x/guide/index.html)
+- [Configuration Reference](https://docs.micronaut.io/4.10.x/guide/configurationreference.html)
 - [Micronaut Guides](https://guides.micronaut.io/index.html)
 ---
 
