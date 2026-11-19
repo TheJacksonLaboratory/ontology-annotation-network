@@ -45,16 +45,6 @@ public class DiseaseRepository {
 	}
 
 	/**
-	 * Finds every disease matching a query, ranked.
-	 *
-	 * @param query the text to search for.
-	 * @return all matching diseases, in ranked order.
-	 */
-	public Collection<Disease> findDiseases(String query) {
-		return searchDiseases(query, 0, -1).results();
-	}
-
-	/**
 	 * Searches diseases by id, MONDO id, name and synonym, and returns one page of ranked results.
 	 *
 	 * @param query the text to search for.

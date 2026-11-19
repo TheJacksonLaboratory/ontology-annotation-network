@@ -25,16 +25,6 @@ public class GeneRepository {
 	}
 
 	/**
-	 * Finds every gene matching a query, ranked.
-	 *
-	 * @param query the text to search for.
-	 * @return all matching genes, in ranked order.
-	 */
-	public Collection<Gene> findGenes(String query){
-		return searchGenes(query, 0, -1).results();
-	}
-
-	/**
 	 * Searches genes by id, symbol and HGNC alternate names, and returns one page of ranked results.
 	 *
 	 * @param query the text to search for.

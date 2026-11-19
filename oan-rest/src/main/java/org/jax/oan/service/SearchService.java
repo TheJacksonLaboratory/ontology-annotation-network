@@ -1,14 +1,11 @@
 package org.jax.oan.service;
 
 import jakarta.inject.Singleton;
-import org.jax.oan.core.Disease;
-import org.jax.oan.core.Gene;
+import org.jax.oan.core.OntologyEntity;
 import org.jax.oan.core.SearchDto;
 import org.jax.oan.repository.DiseaseRepository;
 import org.jax.oan.repository.GeneRepository;
-
-import java.util.Collection;
-import java.util.stream.Collectors;
+import org.jax.oan.repository.SearchPage;
 
 @Singleton
 public class SearchService {
@@ -21,24 +18,35 @@ public class SearchService {
 		this.geneRepository = geneRepository;
 	}
 
+	/**
+	 * Searches genes and returns one page of ranked results.
+	 *
+	 * @param query the text to search for.
+	 * @param page the zero-based page number; ignored when {@code limit} is {@code -1}.
+	 * @param limit the page size, or {@code -1} for every result.
+	 * @return the page of genes and the number of matching genes across all pages.
+	 */
 	public SearchDto searchGene(String query, int page, int limit){
-		page = page * limit;
-		Collection<Gene> genes = this.geneRepository.findGenes(query);
-		if (limit == -1){
-			return new SearchDto(genes, genes.size());
-		} else {
-			return new SearchDto(genes.stream().skip(page).limit(limit).collect(Collectors.toList()),  genes.size());
-		}
-
+		return dto(this.geneRepository.searchGenes(query, offset(page, limit), limit));
 	}
 
+	/**
+	 * Searches diseases and returns one page of ranked results.
+	 *
+	 * @param query the text to search for.
+	 * @param page the zero-based page number; ignored when {@code limit} is {@code -1}.
+	 * @param limit the page size, or {@code -1} for every result.
+	 * @return the page of diseases and the number of matching diseases across all pages.
+	 */
 	public SearchDto searchDisease(String query, int page, int limit){
-		page = page * limit;
-		Collection<Disease> diseases = this.diseaseRepository.findDiseases(query);
-		if (limit == -1){
-			return new SearchDto(diseases,  diseases.size());
-		} else {
-			return new SearchDto(diseases.stream().skip(page).limit(limit).collect(Collectors.toList()),  diseases.size());
-		}
+		return dto(this.diseaseRepository.searchDiseases(query, offset(page, limit), limit));
+	}
+
+	private static int offset(int page, int limit) {
+		return limit == -1 ? 0 : page * limit;
+	}
+
+	private static SearchDto dto(SearchPage<? extends OntologyEntity> page) {
+		return new SearchDto(page.results(), page.total());
 	}
 }
