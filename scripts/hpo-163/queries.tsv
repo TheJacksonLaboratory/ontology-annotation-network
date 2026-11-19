@@ -1,0 +1,60 @@
+entity	query	expected_id
+gene	FBN1	NCBIGene:2200
+disease	marfan	
+disease	epilepsy	
+disease	loeys dietz	
+disease	x linked	
+gene	hla drb1	NCBIGene:3123
+disease	marfan syndrome	OMIM:154700
+disease	cystic fibrosis	OMIM:219700
+disease	tuberous sclerosis	
+disease	noonan syndrome	
+disease	ehlers danlos syndrome	
+disease	spinal muscular atrophy	
+disease	duchenne muscular dystrophy	
+disease	developmental and epileptic encephalopathy	
+disease	syndrome marfan	OMIM:154700
+disease	dietz loeys	
+disease	fibrosis cystic	OMIM:219700
+disease	dystrophy duchenne	
+disease	syndrome noonan	
+disease	linked x intellectual	
+disease	marfan synd	OMIM:154700
+disease	cystic fib	OMIM:219700
+disease	tuberous scl	
+disease	noonan syn	
+disease	ehlers dan	
+disease	spinal muscular atr	
+disease	bardet bie	
+disease	prader wil	
+disease	Prader-Willi syndrome	
+disease	Angelman syndrome	
+disease	Rett syndrome	
+disease	Williams syndrome	
+disease	Fragile X syndrome	
+disease	Huntington disease	
+gene	TP53	NCBIGene:7157
+gene	BRCA1	NCBIGene:672
+gene	CFTR	NCBIGene:1080
+gene	HLA-A	NCBIGene:3105
+gene	MECP2	NCBIGene:4204
+gene	SCN1A	NCBIGene:6323
+gene	fibrillin 1	NCBIGene:2200
+gene	tumor protein p53	NCBIGene:7157
+gene	cystic fibrosis transmembrane	NCBIGene:1080
+disease	BBS1	
+gene	SEC18	NCBIGene:4905
+gene	SKD2	NCBIGene:4905
+disease	ardio	
+disease	trophy	
+disease	154700	OMIM:154700
+disease	OMIM:154700	OMIM:154700
+gene	NCBIGene:2200	NCBIGene:2200
+disease	MONDO:0007947	
+disease	loss or gain	
+disease	not near	
+disease	a	
+disease	ma	
+gene	hl	
+gene	fb	
+gene	a	
