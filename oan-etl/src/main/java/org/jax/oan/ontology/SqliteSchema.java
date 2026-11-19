@@ -16,7 +16,9 @@ public final class SqliteSchema {
 			"CREATE TABLE assay_phenotype (assay_id TEXT NOT NULL, phenotype_id TEXT NOT NULL, outcome TEXT, PRIMARY KEY (assay_id, phenotype_id))",
 			"CREATE TABLE medical_action_target (medical_action_id TEXT NOT NULL, phenotype_id TEXT NOT NULL, disease_id TEXT NOT NULL, relation TEXT NOT NULL, PRIMARY KEY (medical_action_id, phenotype_id, disease_id, relation))",
 			"CREATE TABLE medical_action_annotation (medical_action_id TEXT NOT NULL, disease_id TEXT NOT NULL, phenotype_id TEXT NOT NULL, evidence TEXT NOT NULL, author TEXT, source TEXT, extension_id TEXT, extension_name TEXT)",
-			"CREATE TABLE phenotype_child (parent_id TEXT NOT NULL, child_id TEXT NOT NULL, PRIMARY KEY (parent_id, child_id))"
+			"CREATE TABLE phenotype_child (parent_id TEXT NOT NULL, child_id TEXT NOT NULL, PRIMARY KEY (parent_id, child_id))",
+			"CREATE VIRTUAL TABLE disease_fts USING fts5(disease_id UNINDEXED, name, kind UNINDEXED, tokenize = 'unicode61 remove_diacritics 2', prefix = '2 3')",
+			"CREATE VIRTUAL TABLE gene_fts USING fts5(gene_id UNINDEXED, name, kind UNINDEXED, tokenize = 'unicode61 remove_diacritics 2', prefix = '2 3')"
 	);
 
 	private static final List<String> INDEXES = List.of(
