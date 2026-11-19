@@ -16,6 +16,7 @@
 ### Removed
 - Unused `javax.*` and `neo4j-harness` test dependencies.
 - REST Assured and the serde annotation processor are no longer bundled into the oan-rest jar.
+- Snapshot versioning: `snapshot-version.sh`, the Sonatype snapshots plugin repository and `--update-snapshots` in the PR build.
 
 ## 1.1.0 - 2026-11-18
 ### Changed
