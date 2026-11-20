@@ -64,7 +64,7 @@ Rollback works because:
 3. Run the k6 smoke profile against prod (2 rps for 1 minute, below the Cloud Armor
    limit):
    ```sh
-   k6 run -e BASE_URL=https://ontology.jax.org/api/network load-test/oan-load.js
+   k6 run -e BASE_URL=https://ontology.jax.org/api/network k6/oan-load.js
    ```
 4. Watch the signals below for the first hour, then daily for two weeks.
 
