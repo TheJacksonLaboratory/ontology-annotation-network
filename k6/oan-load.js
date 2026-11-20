@@ -8,7 +8,7 @@
 // provisional starting points.
 //
 // Usage:
-//   k6 run -e BASE_URL=https://<lb-host>/api/network [-e PROFILE=load] load-test/oan-load.js
+//   k6 run -e BASE_URL=https://<lb-host>/api/network [-e PROFILE=load] k6/oan-load.js
 //   Add -e LOG_FAILURES=<n> to change how many non-200 responses each VU logs (default 20).
 //
 // Profiles (constant or ramping arrival rate, in requests per second). Cloud Armor
