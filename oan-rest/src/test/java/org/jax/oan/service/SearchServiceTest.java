@@ -8,14 +8,11 @@ import org.jax.oan.core.Gene;
 import org.jax.oan.core.SearchDto;
 import org.jax.oan.repository.DiseaseRepository;
 import org.jax.oan.repository.GeneRepository;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.jax.oan.repository.SearchPage;
+import org.junit.jupiter.api.Test;
 import org.monarchinitiative.phenol.ontology.data.TermId;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -33,40 +30,35 @@ class SearchServiceTest {
 	@Inject
 	SearchService searchService;
 
-	@ParameterizedTest
-	@MethodSource
-	void test_search_gene(String query, Collection<Gene> genes){
-		when(geneRepository.findGenes(query))
-				.thenReturn(genes);
-		SearchDto expected = searchService.searchGene(query, 0, 10);
-		assertEquals(expected.results(), genes);
+	private static final List<Gene> GENES = List.of(new Gene(TermId.of("NCBIGene:77777"), "LTR1"));
+	private static final List<Disease> DISEASES = List.of(
+			new Disease(TermId.of("OMIM:039203"), "Large Marfanoid Syndrome", "", ""),
+			new Disease(TermId.of("MONDO:99999"), "Marfan Syndrome", "MONDO:009121", "Rare disease"));
+
+	@Test
+	void pageBecomesOffset() {
+		when(geneRepository.searchGenes("fbn", 20, 10)).thenReturn(new SearchPage<>(GENES, 21));
+		when(diseaseRepository.searchDiseases("marf", 20, 10)).thenReturn(new SearchPage<>(DISEASES, 22));
+		assertEquals(GENES, searchService.searchGene("fbn", 2, 10).results());
+		assertEquals(DISEASES, searchService.searchDisease("marf", 2, 10).results());
 	}
 
-
-	@ParameterizedTest
-	@MethodSource
-	void test_search_disease(String query, Collection<Disease> diseases){
-		when(diseaseRepository.findDiseases(query))
-				.thenReturn(diseases);
-		SearchDto expected = searchService.searchDisease(query, 0 ,10);
-		assertEquals(expected.results(), diseases);
+	@Test
+	void unlimitedIgnoresPage() {
+		when(geneRepository.searchGenes("ltr", 0, -1)).thenReturn(new SearchPage<>(GENES, 1));
+		when(diseaseRepository.searchDiseases("large", 0, -1)).thenReturn(new SearchPage<>(DISEASES, 2));
+		assertEquals(GENES, searchService.searchGene("ltr", 3, -1).results());
+		assertEquals(DISEASES, searchService.searchDisease("large", 3, -1).results());
 	}
 
-	private static Stream<Arguments> test_search_disease(){
-		return Stream.of(
-				Arguments.of("marf", List.of(
-						new Disease(TermId.of("OMIM:039203"), "Large Marfanoid Syndrome", "", ""),
-						new Disease(TermId.of("MONDO:99999"), "Marfan Syndrome", "MONDO:009121", "Rare disease")
-				))
-		);
-	}
-
-	private static Stream<Arguments> test_search_gene(){
-		return Stream.of(
-				Arguments.of("marf", List.of(
-						new Gene(TermId.of("NCBIGene:77777"), "LTR1")
-				))
-		);
+	@Test
+	void totalComesFromRepository() {
+		when(geneRepository.searchGenes("total", 0, 10)).thenReturn(new SearchPage<>(GENES, 57));
+		when(diseaseRepository.searchDiseases("total", 0, 10)).thenReturn(new SearchPage<>(DISEASES, 58));
+		SearchDto genes = searchService.searchGene("total", 0, 10);
+		SearchDto diseases = searchService.searchDisease("total", 0, 10);
+		assertEquals(57, genes.totalCount());
+		assertEquals(58, diseases.totalCount());
 	}
 
 	@MockBean(DiseaseRepository.class)

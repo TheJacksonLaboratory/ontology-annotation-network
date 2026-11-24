@@ -21,7 +21,7 @@ file. This set of branches carries out that decision.
 | HPO-160 | Port `DiseaseRepository` | `feature/hpo-164-sqlite-repo-fixtures` | Done, not merged |
 | HPO-161 | Port `GeneRepository` | `feature/hpo-164-sqlite-repo-fixtures` | Done, not merged |
 | HPO-162 | Port `PhenotypeRepository` (incl. closure lookup) | `feature/hpo-164-sqlite-repo-fixtures` | Done, not merged |
-| HPO-163 | FTS replacing regex name search | — | Not started (plain `LIKE` in place as a placeholder) |
+| HPO-163 | FTS replacing regex name search | `feature/hpo-163-fts5` | Done, not merged (FTS5 over names + synonyms, ranked and paged in SQL; see `docs/hpo-163-search-comparison.md`) |
 | HPO-164 | Port repository tests to a fixture artifact | `feature/hpo-164-sqlite-repo-fixtures` | Done, not merged |
 | HPO-165 | Deploy SQLite build at a 2nd URL, live-diff vs. Neo4j | — | Not started (deployment task, not code) |
 | HPO-166 | Remove residual Neo4j (oan-rest code/config half) | `feature/hpo-164-sqlite-repo-fixtures` | Done, not merged |
@@ -69,9 +69,8 @@ Order: **HPO-158 → HPO-160/161/162/164/166 → HPO-167 (combined pipeline)**.
 
 ## What's genuinely still open
 
-- **HPO-163** — real FTS. Both repositories currently use a plain SQL `LIKE` in place of
-  Neo4j's regex name matching, which is a documented, accepted difference for HPO-165's
-  diff, not a final state.
+- **HPO-163** — done on `feature/hpo-163-fts5`, not merged. Search returns every result
+  1.1.0 did, plus synonym hits, in a different order; the SQA k6 load check is still to run.
 - **HPO-165** — stand up the SQLite build at a second URL, diff it live against the
   currently-deployed Neo4j service, using the `last-neo4j-capable` tag as the rebuild point
   if that service ever needs reproducing. This is a deployment task once the above merges

@@ -16,6 +16,7 @@ import java.util.*;
 @Singleton
 public class GeneRepository {
 	private static final Logger log = LoggerFactory.getLogger(GeneRepository.class);
+	private static final RankedSearch SEARCH = new RankedSearch("gene", "gene_fts", "gene_id", false);
 
 	private final SqliteConnectionProvider connectionProvider;
 
@@ -24,31 +25,22 @@ public class GeneRepository {
 	}
 
 	/**
-	 * Find me a gene by query.
-	 * @param query - the text to search for
-	 * @return List of genes matching the query sorted by if the gene starts with query.
+	 * Searches genes by id, symbol and HGNC alternate names, and returns one page of ranked results.
+	 *
+	 * @param query the text to search for.
+	 * @param offset the number of ranked results to skip.
+	 * @param limit the maximum number of results to return, or {@code -1} for no limit.
+	 * @return the page and the number of matching genes across all pages; an empty page with a total of zero if the
+	 * query has no words or the search fails.
 	 */
-	public Collection<Gene> findGenes(String query){
-		Optional<String> like = SearchQuery.likePattern(query);
-		if (like.isEmpty()) {
-			return List.of();
-		}
-		List<Gene> genes = new ArrayList<>();
-		try (Connection connection = connectionProvider.connection();
-			 PreparedStatement statement = connection.prepareStatement(
-				"SELECT id, name FROM gene WHERE LOWER(name) LIKE ? OR id LIKE ?")) {
-			statement.setString(1, like.get());
-			statement.setString(2, "%" + query + "%");
-			try (ResultSet rs = statement.executeQuery()) {
-				while (rs.next()) {
-					genes.add(new Gene(TermId.of(rs.getString("id")), rs.getString("name")));
-				}
-			}
+	public SearchPage<Gene> searchGenes(String query, int offset, int limit) {
+		try (Connection connection = connectionProvider.connection()) {
+			return SEARCH.page(connection, "e.id, e.name", "gene", query, offset, limit,
+					rs -> new Gene(TermId.of(rs.getString("id")), rs.getString("name")));
 		} catch (Exception e) {
-			log.warn("Repository query failed", e);
-			return Collections.emptyList();
+			log.error("Gene search failed", e);
+			return new SearchPage<>(List.of(), 0);
 		}
-		return genes.stream().sorted(SearchQuery.ranking(query, Gene::getName)).toList();
 	}
 
 	/**

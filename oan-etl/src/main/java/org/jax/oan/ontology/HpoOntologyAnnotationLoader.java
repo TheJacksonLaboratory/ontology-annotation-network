@@ -58,8 +58,9 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		stage = logElapsed("Load MONDO ontology", stage);
 		final HpoaDiseaseDataContainer diseases = HpoaDiseaseDataLoader.of(databases).loadDiseaseData(dataResolver.phenotypeAnnotations());
 		stage = logElapsed("Load disease annotations", stage);
+		final Path hgncCompleteSet = deduplicateHgncEntrezIds(dataResolver.hgncCompleteSet());
 		final HpoAssociationData associations = HpoAssociationData.builder(hpoOntology).orphaToGenePath(dataResolver.orpha2Gene()).mim2GeneMedgen(dataResolver.mim2geneMedgen())
-				.hpoDiseases(diseases).hgncCompleteSetArchive(deduplicateHgncEntrezIds(dataResolver.hgncCompleteSet())).build();
+				.hpoDiseases(diseases).hgncCompleteSetArchive(hgncCompleteSet).build();
 		stage = logElapsed("Build gene associations", stage);
 		final MondoXrefIndex mondoIndex = MondoXrefIndex.of(mondoOntology.getTerms());
 		stage = logElapsed("Index MONDO xrefs", stage);
@@ -71,7 +72,7 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 		stage = logElapsed("Phenotypes", stage);
 		diseases(diseases, mondoEquivalents);
 		stage = logElapsed("Diseases", stage);
-		genes(associations);
+		genes(associations, HgncNames.read(hgncCompleteSet));
 		stage = logElapsed("Genes", stage);
 		phenotypeToPhenotype(hpoOntology.getTerms(), hpoOntology);
 		stage = logElapsed("Phenotype to phenotype", stage);
@@ -160,29 +161,77 @@ public class HpoOntologyAnnotationLoader implements OntologyAnnotationLoader {
 			logger.info("Done.");
 	}
 
-	void genes(HpoAssociationData associations){
+	/**
+	 * Loads genes and the names they can be searched by.
+	 *
+	 * @param associations the gene identifiers to load.
+	 * @param hgncNames the alternate names of each gene, keyed by Entrez id digits.
+	 */
+	void genes(HpoAssociationData associations, Map<String, List<String>> hgncNames){
 		logger.info("Loading Genes...");
 		List<Object[]> rows = new ArrayList<>();
-		associations.getGeneIdentifiers().forEach(g -> rows.add(new Object[]{g.id().toString(), g.symbol()}));
+		List<Object[]> nameRows = new ArrayList<>();
+		associations.getGeneIdentifiers().forEach(g -> {
+			String id = g.id().toString();
+			rows.add(new Object[]{id, g.symbol()});
+			nameRows.addAll(nameRows(id, g.symbol(), hgncNames.getOrDefault(g.id().getId(), List.of())));
+		});
 		sqliteWriter.batchInsert("INSERT OR IGNORE INTO gene (id, name) VALUES (?, ?)", rows);
+		sqliteWriter.batchInsert("INSERT INTO gene_fts (gene_id, name, kind) VALUES (?, ?, ?)", nameRows);
 		logger.info("Done.");
+	}
+
+	/**
+	 * Builds the full-text rows for one entity's searchable names.
+	 *
+	 * @param id the entity id.
+	 * @param primary the entity's primary name.
+	 * @param synonyms the entity's other names.
+	 * @return {@code [id, name, kind]} rows, the primary first with kind {@code primary}, then each synonym with
+	 * kind {@code synonym}; blank names and names that repeat an earlier one, ignoring case, are dropped.
+	 */
+	static List<Object[]> nameRows(String id, String primary, Collection<String> synonyms) {
+		List<Object[]> rows = new ArrayList<>();
+		Set<String> seen = new HashSet<>();
+		if (primary != null && !primary.isBlank() && seen.add(primary.strip().toLowerCase())) {
+			rows.add(new Object[]{id, primary.strip(), "primary"});
+		}
+		for (String synonym : synonyms) {
+			if (synonym != null && !synonym.isBlank() && seen.add(synonym.strip().toLowerCase())) {
+				rows.add(new Object[]{id, synonym.strip(), "synonym"});
+			}
+		}
+		return rows;
 	}
 
 	void diseases(HpoaDiseaseDataContainer diseases, Map<TermId, Term> mondoEquivalents){
 		logger.info("Loading Diseases...");
 		List<Object[]> rows = new ArrayList<>();
+		List<Object[]> nameRows = new ArrayList<>();
+		Set<String> loaded = new HashSet<>();
 		diseases.diseaseData().stream().distinct().forEach(d -> {
 					Optional<Term> equivalent = Optional.ofNullable(mondoEquivalents.get(d.id()));
 					String mondoId = "";
 					String description = "No disease description found.";
+					List<String> synonyms = new ArrayList<>();
 					if (equivalent.isPresent()){
 						mondoId = equivalent.get().id().getValue();
 						description = equivalent.get().getDefinition();
+						synonyms.add(equivalent.get().getName());
+						equivalent.get().getSynonyms().stream()
+								.filter(s -> s.getScope() == TermSynonymScope.EXACT || s.getScope() == TermSynonymScope.RELATED)
+								.map(TermSynonym::getValue)
+								.forEach(synonyms::add);
 					}
-					rows.add(new Object[]{d.id().toString(), d.name(), mondoId, description});
+					String id = d.id().toString();
+					rows.add(new Object[]{id, d.name(), mondoId, description});
+					if (loaded.add(id)) {
+						nameRows.addAll(nameRows(id, d.name(), synonyms));
+					}
 				}
 		);
 		sqliteWriter.batchInsert("INSERT OR IGNORE INTO disease (id, name, mondo_id, description) VALUES (?, ?, ?, ?)", rows);
+		sqliteWriter.batchInsert("INSERT INTO disease_fts (disease_id, name, kind) VALUES (?, ?, ?)", nameRows);
 		logger.info("Done.");
 	}
 
